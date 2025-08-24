@@ -26,12 +26,9 @@ tokenized_shuffled_words = [
     for sentence in tokenized_sentencesTRAINER
 ]
 print("данные обучения предложения:", tokenized_shuffled_words)
-#это реле - не сигмоида!
+
 def sigmoid(z):
-    return np.maximum(0, z)
-#тест! это настоящая сигмоида
-#def sigmoid(z):
-    #return 1 / (1 + np.exp(-z))
+    return 1 / (1 + np.exp(-z))
 
 input_size = 5
 hidden_size = 100
@@ -131,8 +128,7 @@ for sentence in tokenized_sentencesTRAINER:
     for i in range(len(sentence) - input_size + 1):
         x_tokens = sentence[i:i+input_size]
         #нормализация входа
-        #x = np.array(x_tokens, dtype=float).reshape(input_size, 1)
-        x = np.array(x_tokens, dtype=float).reshape(input_size, 1) / len(vocab)
+        x = np.array(x_tokens, dtype=float).reshape(input_size, 1)
 
         z_hidden = np.dot(wekrtor_size, x) + bias_hidden
         a_hidden = sigmoid(z_hidden)
