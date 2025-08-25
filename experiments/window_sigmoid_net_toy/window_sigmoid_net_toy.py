@@ -142,7 +142,7 @@ for sentence in tokenized_sentencesTRAINER:
 
 inv_vocab = {v: k for k, v in vocab.items()}
 
-start_sequence = ['енот', 'Рики', 'устроил', 'гонку', 'на']
+start_sequence = ['Сынок', ',', 'ты', 'будешь', 'славный']
 generated_tokens = [vocab[w] for w in start_sequence]
 max_steps = 10
 

@@ -2,8 +2,9 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <cmath>
 using namespace std;
-
+// базовый токенизатор
 class Tokenizer
 {
     public:
@@ -74,7 +75,7 @@ class Tokenizer
 };
 
 };
-
+//размечаем эмбдинги
 class Embedding : public Tokenizer
 {
     public:
@@ -114,12 +115,60 @@ class Embedding : public Tokenizer
 
 };
 
+//далее решаем задачу позиционирования слов для обработки через слой трансформера 
+//В трансформере порядок слов важен, потому что сам трансформер не видит порядок.
+class PositionalEncoding 
+{
+    int dim;//это размерность эмбеддинга
+    int max_len; // максимальная длина последовательности
+
+    /*
+    positions — это двумерный массив, в котором каждая строка соответствует позиции токена,
+    а каждый столбец — компоненте позиционного вектора.
+    Размерность: [max_len][dim].
+    */
+    vector<vector<float>> positions;
+    public:
+    // то что происходит ниже для меня пока магия но оно рабоает - у эмбдинга появляется позиция!
+     PositionalEncoding(int dim_, int max_len_ = 512) : dim(dim_), max_len(max_len_) 
+     {
+        positions.resize(max_len, vector<float>(dim, 0.0f));
+            for (int pos = 0; pos < max_len; ++pos) 
+            {
+                for (int i = 0; i < dim; ++i) 
+                {
+                    positions[pos][i] = pos / pow(10000.0, 2.0 * (i / 2) / dim);
+                    if (i % 2 == 0)
+                    positions[pos][i] = sin(positions[pos][i]);
+                else
+                    positions[pos][i] = cos(positions[pos][i]);
+
+                }
+            }
+     }
+
+    vector<vector<float>> add_to_embeddings(const vector<vector<float>>& embeddings) 
+    {
+        vector<vector<float>> out = embeddings;
+        for (size_t i = 0; i < embeddings.size(); ++i) 
+        {
+            for (int j = 0; j < dim; ++j) 
+            {
+                out[i][j] += positions[i][j];
+
+            }
+        }
+        return out;
+    }
+    //магия закончилась 
+
+};
 int main()
 {
     cout << "Hello World!\n";
     Tokenizer::ByteTokinizer tok;
 
-    string word = "привет как твои дела ";
+    string word = "hello world  ";
     vector<int> encoded = tok.encode(word);
     string decoded = tok.decode(encoded);
 
@@ -128,11 +177,19 @@ int main()
     cout << "Encoded: ";
     for (int id : encoded) cout << id << " ";
     cout << endl;
-
-    Embedding embedding(4);
+ // эмбеддинги размерностью 4
+    Embedding embedding(128);//эмбдинг и позиционный эмдинг в данном случае имеют прямую зависимость 
     vector<vector<float>> embedded = embedding.encode_to_embedding(word);
 
+    // добавляем позиционное кодирование
+    // проясню - первое число на размерность эмбдинга( должен быть такой же как и embedding выше) второе число - максимальная длина последовательности
+    //говоря проще - это лимит, сколько токенов трансформер может “увидеть” одновременно.
+    PositionalEncoding pe(128, 256);//не забыть про адекватность. И да, эмбдингов это тоже касается
+    
+    vector<vector<float>> embedded_with_pos = pe.add_to_embeddings(embedded);
+
     cout << "Decoded: " << decoded << endl;
+
     cout << "Embeddings:" << endl;
     for (size_t i = 0; i < embedded.size(); i++)
     {
@@ -141,6 +198,16 @@ int main()
             cout << val << " ";
         cout << endl;
     }
+    cout << "Embeddings positional:" << endl;
+    for (size_t i = 0; i < embedded_with_pos.size(); i++)
+    {
+        cout << "Token " << encoded[i] << ": ";
+        for (float val : embedded_with_pos[i])
+            cout << val << " ";
+        cout << endl;
+    }
+    
 
     return 0;
+    
 }
