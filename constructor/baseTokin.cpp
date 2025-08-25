@@ -4,7 +4,7 @@
 #include <cstdint>
 using namespace std;
 
-class tokinizer
+class Tokenizer
 {
     public:
 
@@ -29,7 +29,8 @@ class tokinizer
      // основа токенизатора 
      struct ByteTokinizer
      {
-        vector<int> encode(const string& text, bool add_bos=true, bool add_eos=true){
+        vector<int> encode(const string& text, bool add_bos=true, bool add_eos=true)
+        {
             //Создаём пустой список токенов (ids)
             //Если нужно — сразу добавляем спец-токен начала (BOS = 257).
             vector<int> ids;
@@ -55,27 +56,31 @@ class tokinizer
             
         }
         //декодер для примера и проверки работоспособности самого токенизатора
-        string decode(const vector<int>& ids) {
+        string decode(const vector<int>& ids) 
+        {
         string out;
-        for (int id : ids) {
-            if (0 <= id && id < Vocab::BASE) {
+        for (int id : ids) 
+        {
+            if (0 <= id && id < Vocab::BASE) 
+            {
                 out.push_back((char)id); // байт → символ
             }
-            // спец-токены (BOS, EOS, PAD) обычно пропускаем
+            // спец-токены (BOS, EOS, PAD) обычно пропускаем, не нужны нам заастую, но могут пригодится для анализа и поска ошибок в
+            // обучающем датасете
         }
         return out;
     }
-
+    
 };
-     
+
 };
 
 int main()
 {
     cout << "Hello World!\n";
-    tokinizer::ByteTokinizer tok;
+    Tokenizer::ByteTokinizer tok;
 
-    string word = "hi!";
+    string word = "привет как твои дела ";
     vector<int> encoded = tok.encode(word);
     string decoded = tok.decode(encoded);
 
