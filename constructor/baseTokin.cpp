@@ -1,18 +1,13 @@
 #include <iostream>
-#pragma once
 #include <vector>
 #include <string>
 #include <cstdint>
 using namespace std;
 
-int main()
-{
-    cout << "Hello World!\n";
-    return 0;
-}
-
 class tokinizer
 {
+    public:
+
     //словарь как ASCII и в навесок резервируем места старше 255(конец нумерации последнего символа)
      struct Vocab
      {
@@ -59,9 +54,37 @@ class tokinizer
             return ids;
             
         }
-
-
-     };
-     
+        //декодер для примера и проверки работоспособности самого токенизатора
+        string decode(const vector<int>& ids) {
+        string out;
+        for (int id : ids) {
+            if (0 <= id && id < Vocab::BASE) {
+                out.push_back((char)id); // байт → символ
+            }
+            // спец-токены (BOS, EOS, PAD) обычно пропускаем
+        }
+        return out;
+    }
 
 };
+     
+};
+
+int main()
+{
+    cout << "Hello World!\n";
+    tokinizer::ByteTokinizer tok;
+
+    string word = "hi!";
+    vector<int> encoded = tok.encode(word);
+    string decoded = tok.decode(encoded);
+
+    cout << "Input: " << word << endl;
+
+    cout << "Encoded: ";
+    for (int id : encoded) cout << id << " ";
+    cout << endl;
+
+    cout << "Decoded: " << decoded << endl;
+    return 0;
+}
