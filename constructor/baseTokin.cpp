@@ -75,6 +75,45 @@ class Tokenizer
 
 };
 
+class Embedding : public Tokenizer
+{
+    public:
+    int dim;//это размерность эмбеддинга, т.е. сколько чисел будет представлять один токен.
+    /*
+    weights[token_id] — это вектор размером dim для конкретного токена.
+    vector<vector<float>> — двумерный вектор: строки — это токены, столбцы — параметры/веса (эмбеддинги).
+    */
+    vector<vector<float>> weights;
+    //можно менять размер матрицы весов ради прикола можно поставить 512 но не рекомендую
+    Embedding(int dim_) : dim(dim_) 
+    {
+        weights.resize(Vocab::SIZE, vector<float>(dim, 0.0f));// инициализация нулями - но по сути это не совсем верно 
+        //обьясняю почему - при обучении намного легче будет корректирваоть ошибку методом обратного распространения 
+        //если веса будут изначально разбросаны, в ином случае все наши слова равны по смыслу с начала
+
+    }
+    //Получение эмбеддинга конкретного токена
+    //Взял токен по его id и вернул вектор эмбеддинга этого токена.
+    //Пример: токен 'h' = 104 → вернётся weights[104], который размерностью dim.
+    vector<float> get_embedding(int token_id)
+    {
+        return weights[token_id];
+    }
+    /*
+    Сначала мы токенизируем текст через ByteTokinizer(), получаем список токенов.
+    Потом для каждого токена берём его эмбеддинг через get_embedding.
+    В итоге получаем матрицу эмбеддингов размерности [кол-во токенов, dim].
+    */
+    vector<vector<float>> encode_to_embedding(const string& text)
+    {
+        vector<int> token_ids = ByteTokinizer().encode(text);
+        vector<vector<float>>out;
+        for(int id : token_ids) out.push_back(get_embedding(id));
+        return out;
+    }
+
+};
+
 int main()
 {
     cout << "Hello World!\n";
@@ -90,6 +129,18 @@ int main()
     for (int id : encoded) cout << id << " ";
     cout << endl;
 
+    Embedding embedding(4);
+    vector<vector<float>> embedded = embedding.encode_to_embedding(word);
+
     cout << "Decoded: " << decoded << endl;
+    cout << "Embeddings:" << endl;
+    for (size_t i = 0; i < embedded.size(); i++)
+    {
+        cout << "Token " << encoded[i] << ": ";
+        for (float val : embedded[i])
+            cout << val << " ";
+        cout << endl;
+    }
+
     return 0;
 }
