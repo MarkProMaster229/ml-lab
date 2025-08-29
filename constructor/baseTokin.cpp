@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <cmath>
+#include <algorithm>
 using namespace std;
 // базовый токенизатор
 class Tokenizer
@@ -163,6 +164,55 @@ class PositionalEncoding
     //магия закончилась 
 
 };
+
+class Transformer {
+public:
+//тут тупо базовые манипуляции с матрицами не более
+    // Умножение двух матриц A * B
+    vector<vector<float>> matmul(const vector<vector<float>>& A, const vector<vector<float>>& B) {
+        size_t n = A.size();           // количество строк в A
+        size_t m = A[0].size();        // количество столбцов в A
+        size_t p = B[0].size();        // количество столбцов в B
+        vector<vector<float>> C(n, vector<float>(p, 0.0f));
+        
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < p; ++j) {
+                for (size_t k = 0; k < m; ++k) {
+                    C[i][j] += A[i][k] * B[k][j];
+                }
+            }
+        }
+        return C;
+    }
+
+    // Транспонирование матрицы
+    vector<vector<float>> transpose(const vector<vector<float>>& A) {
+        size_t n = A.size();
+        size_t m = A[0].size();
+        vector<vector<float>> T(m, vector<float>(n, 0.0f));
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < m; ++j) {
+                T[j][i] = A[i][j];
+            }
+        }
+        return T;
+    }
+//вот до сих пор 
+    // Softmax по строкам
+    vector<vector<float>> softmax(const vector<vector<float>>& A) {
+        vector<vector<float>> S = A;
+        for (size_t i = 0; i < A.size(); ++i) {
+            float max_val = *max_element(A[i].begin(), A[i].end());
+            float sum = 0.0f;
+            for (float val : A[i]) sum += exp(val - max_val);
+            for (size_t j = 0; j < A[i].size(); ++j) S[i][j] = exp(A[i][j] - max_val) / sum;
+        }
+        return S;
+    }
+
+};
+
+
 int main()
 {
     cout << "Hello World!\n";
