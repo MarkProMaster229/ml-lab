@@ -77,17 +77,43 @@ class Tokenizer
 
 };
 //я думаю - без класса тензор реализовать многоголовый трасформер будет проблемно 
+//вот такое решение есть для последовательного хранения offset = b * seq_len * dim + s * dim + d;
 class Tensor
 {
     public:
-vector<vector<vector<int>>> tensor = {
-    { {0,0}, {0,0} },   // batch 0
-    { {0,0}, {0,0} },   // batch 1
-    { {0,0}, {0,0} } // batch 2
+    vector<int> data;
+    size_t batch_size, seq_len, dim;
+    /*
+    batch_size — сколько предложений/батчей в тензоре
+    seq_len — сколько токенов в каждом предложении
+    dim — размерность эмбеддинга (вектор, который хранит каждый токен)
+    size_t гарантирует, что все размеры неотрицательные и подходящего типа для адресации памяти.
+    */
+
+    Tensor(size_t b, size_t s, size_t d) : batch_size(b), seq_len(s), dim(d) {
+        data.resize(b * s * d, 0); // все элементы нули
+    }
+
+    int& at(size_t b, size_t s, size_t d) {
+        return data[b * seq_len * dim + s * dim + d];
+    }
+
+    // метод для вывода части тензора (например, первых n батчей)
+    void print(size_t n_batches = 1) {
+        for(size_t b = 0; b < n_batches && b < batch_size; ++b){
+            cout << "Batch " << b << ":\n";
+            for(size_t s = 0; s < seq_len; ++s){
+                cout << "  Token " << s << ": ";
+                for(size_t d = 0; d < dim; ++d){
+                    cout << at(b,s,d) << " ";
+                }
+                cout << "\n";
+            }
+            cout << "\n";
+        }
+    }
 };
 
-
-};
 //размечаем эмбдинги
 class Embedding : public Tokenizer
 {
