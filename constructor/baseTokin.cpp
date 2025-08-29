@@ -76,6 +76,18 @@ class Tokenizer
 };
 
 };
+//я думаю - без класса тензор реализовать многоголовый трасформер будет проблемно 
+class Tensor
+{
+    public:
+vector<vector<vector<int>>> tensor = {
+    { {0,0}, {0,0} },   // batch 0
+    { {0,0}, {0,0} },   // batch 1
+    { {0,0}, {0,0} } // batch 2
+};
+
+
+};
 //размечаем эмбдинги
 class Embedding : public Tokenizer
 {
@@ -165,7 +177,8 @@ class PositionalEncoding
 
 };
 
-class Transformer {
+class Transformer 
+{
 public:
 //тут тупо базовые манипуляции с матрицами не более
     // Умножение двух матриц A * B
