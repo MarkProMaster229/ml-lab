@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cmath>
 #include <algorithm>
+#include "Tensor.cpp"
 using namespace std;
 
 // далее решаем задачу позиционирования слов для обработки через слой трансформера 
