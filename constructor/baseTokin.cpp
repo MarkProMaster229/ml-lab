@@ -80,21 +80,30 @@ class Tokenizer
 //вот такое решение есть для последовательного хранения offset = b * seq_len * dim + s * dim + d;
 class Tensor
 {
-    public:
-    vector<int> data;
-    size_t batch_size, seq_len, dim;
+public:
+    // храним все данные в одномерном массиве, теперь тип float для эмбеддингов
+    vector<float> data;
+
+    // размеры тензора
+    size_t batch_size; // сколько предложений/батчей в тензоре
+    size_t seq_len;    // сколько токенов в каждом предложении
+    size_t dim;        // размерность эмбеддинга (вектор, который хранит каждый токен)
     /*
-    batch_size — сколько предложений/батчей в тензоре
-    seq_len — сколько токенов в каждом предложении
-    dim — размерность эмбеддинга (вектор, который хранит каждый токен)
     size_t гарантирует, что все размеры неотрицательные и подходящего типа для адресации памяти.
     */
 
+    // конструктор: задаём размеры, инициализируем все элементы нулями
     Tensor(size_t b, size_t s, size_t d) : batch_size(b), seq_len(s), dim(d) {
-        data.resize(b * s * d, 0); // все элементы нули
+        data.resize(b * s * d, 0.0f); // все элементы нули
     }
 
-    int& at(size_t b, size_t s, size_t d) {
+    // доступ к элементу по координатам (b, s, d)
+    float& at(size_t b, size_t s, size_t d) {
+        return data[b * seq_len * dim + s * dim + d];
+    }
+
+    // константная версия доступа для случаев, когда не хотим менять данные
+    const float& at(size_t b, size_t s, size_t d) const {
         return data[b * seq_len * dim + s * dim + d];
     }
 
@@ -105,7 +114,7 @@ class Tensor
             for(size_t s = 0; s < seq_len; ++s){
                 cout << "  Token " << s << ": ";
                 for(size_t d = 0; d < dim; ++d){
-                    cout << at(b,s,d) << " ";
+                    cout << at(b,s,d) << " "; // вывод значений по координатам
                 }
                 cout << "\n";
             }
@@ -114,137 +123,162 @@ class Tensor
     }
 };
 
+
 //размечаем эмбдинги
 class Embedding : public Tokenizer
 {
-    public:
-    int dim;//это размерность эмбеддинга, т.е. сколько чисел будет представлять один токен.
+public:
+    int dim; // размерность эмбеддинга, т.е. сколько чисел будет представлять один токен
+
     /*
     weights[token_id] — это вектор размером dim для конкретного токена.
-    vector<vector<float>> — двумерный вектор: строки — это токены, столбцы — параметры/веса (эмбеддинги).
+    Теперь используем Tensor вместо vector<vector<float>>, чтобы хранить эмбеддинги всех токенов.
     */
-    vector<vector<float>> weights;
-    //можно менять размер матрицы весов ради прикола можно поставить 512 но не рекомендую
-    Embedding(int dim_) : dim(dim_) 
-    {
-        weights.resize(Vocab::SIZE, vector<float>(dim, 0.0f));// инициализация нулями - но по сути это не совсем верно 
-        //обьясняю почему - при обучении намного легче будет корректирваоть ошибку методом обратного распространения 
-        //если веса будут изначально разбросаны, в ином случае все наши слова равны по смыслу с начала
+    Tensor weights;
 
-    }
-    //Получение эмбеддинга конкретного токена
-    //Взял токен по его id и вернул вектор эмбеддинга этого токена.
-    //Пример: токен 'h' = 104 → вернётся weights[104], который размерностью dim.
-    vector<float> get_embedding(int token_id)
+    // конструктор: инициализация весов нулями
+    Embedding(int dim_) : dim(dim_), weights(Vocab::SIZE, 1, dim_) 
     {
-        return weights[token_id];
+        // по сути нули — неидеально для обучения, лучше использовать случайное распределение
+        // например: weights.at(token_id, 0, d) = (rand() / (float)RAND_MAX - 0.5f) * 0.01f;
     }
-    /*
-    Сначала мы токенизируем текст через ByteTokinizer(), получаем список токенов.
-    Потом для каждого токена берём его эмбеддинг через get_embedding.
-    В итоге получаем матрицу эмбеддингов размерности [кол-во токенов, dim].
-    */
-    vector<vector<float>> encode_to_embedding(const string& text)
+
+    // Получение эмбеддинга конкретного токена
+    // Раньше возвращали vector<float>, теперь просто копируем в Tensor на 1 токен
+    Tensor get_embedding(int token_id)
+    {
+        Tensor emb(1, 1, dim); // 1 батч, 1 токен
+        for (int d = 0; d < dim; ++d)
+            emb.at(0, 0, d) = weights.at(token_id, 0, d);
+        return emb;
+    }
+
+    // Кодируем строку в последовательность эмбеддингов
+    Tensor encode_to_embedding(const string& text)
     {
         vector<int> token_ids = ByteTokinizer().encode(text);
-        vector<vector<float>>out;
-        for(int id : token_ids) out.push_back(get_embedding(id));
+        Tensor out(1, token_ids.size(), dim); // 1 батч, seq_len = количество токенов
+
+        for (size_t s = 0; s < token_ids.size(); ++s)
+        {
+            int id = token_ids[s];
+            for (int d = 0; d < dim; ++d)
+                out.at(0, s, d) = weights.at(id, 0, d);
+        }
+
         return out;
     }
-
 };
 
-//далее решаем задачу позиционирования слов для обработки через слой трансформера 
-//В трансформере порядок слов важен, потому что сам трансформер не видит порядок.
+
+// далее решаем задачу позиционирования слов для обработки через слой трансформера 
+// В трансформере порядок слов важен, потому что сам трансформер не видит порядок.
 class PositionalEncoding 
 {
-    int dim;//это размерность эмбеддинга
-    int max_len; // максимальная длина последовательности
+    int dim;      // это размерность эмбеддинга
+    int max_len;  // максимальная длина последовательности
 
     /*
-    positions — это двумерный массив, в котором каждая строка соответствует позиции токена,
-    а каждый столбец — компоненте позиционного вектора.
-    Размерность: [max_len][dim].
+    positions — теперь используем Tensor вместо vector<vector<float>>.
+    Каждая строка соответствует позиции токена,
+    каждый столбец — компоненте позиционного вектора.
+    Размерность: [max_len, 1, dim], где batch_size=1.
     */
-    vector<vector<float>> positions;
-    public:
-    // то что происходит ниже для меня пока магия но оно рабоает - у эмбдинга появляется позиция!
-     PositionalEncoding(int dim_, int max_len_ = 512) : dim(dim_), max_len(max_len_) 
-     {
-        positions.resize(max_len, vector<float>(dim, 0.0f));
-            for (int pos = 0; pos < max_len; ++pos) 
-            {
-                for (int i = 0; i < dim; ++i) 
-                {
-                    positions[pos][i] = pos / pow(10000.0, 2.0 * (i / 2) / dim);
-                    if (i % 2 == 0)
-                    positions[pos][i] = sin(positions[pos][i]);
-                else
-                    positions[pos][i] = cos(positions[pos][i]);
+    Tensor positions;
 
-                }
-            }
-     }
-
-    vector<vector<float>> add_to_embeddings(const vector<vector<float>>& embeddings) 
+public:
+    // Конструктор создаёт позиции и заполняет их синусами и косинусами
+    // то что происходит ниже для меня пока магия но оно работает — у эмбдинга появляется позиция!
+    PositionalEncoding(int dim_, int max_len_ = 512) 
+        : dim(dim_), max_len(max_len_), positions(max_len_, 1, dim_)
     {
-        vector<vector<float>> out = embeddings;
-        for (size_t i = 0; i < embeddings.size(); ++i) 
+        for (int pos = 0; pos < max_len; ++pos) 
         {
-            for (int j = 0; j < dim; ++j) 
+            for (int i = 0; i < dim; ++i) 
             {
-                out[i][j] += positions[i][j];
+                float angle = pos / pow(10000.0f, 2.0f * (i / 2) / dim);
+                if (i % 2 == 0)
+                    positions.at(pos, 0, i) = sin(angle);
+                else
+                    positions.at(pos, 0, i) = cos(angle);
+            }
+        }
+    }
 
+    // Метод добавляет позиционные кодировки к эмбеддингам
+    // embeddings — Tensor размерности [1, seq_len, dim]
+    Tensor add_to_embeddings(const Tensor& embeddings) 
+    {
+        Tensor out(1, embeddings.seq_len, embeddings.dim); // создаём новый Tensor для выхода
+        for (size_t s = 0; s < embeddings.seq_len; ++s) 
+        {
+            for (int d = 0; d < dim; ++d) 
+            {
+                // добавляем позицию к эмбеддингу токена
+                out.at(0, s, d) = embeddings.at(0, s, d) + positions.at(s, 0, d);
             }
         }
         return out;
     }
-    //магия закончилась 
-
+    // магия закончилась
 };
 
 class Transformer 
 {
 public:
-//тут тупо базовые манипуляции с матрицами не более
+    // тут тупо базовые манипуляции с матрицами, не более
+
     // Умножение двух матриц A * B
-    vector<vector<float>> matmul(const vector<vector<float>>& A, const vector<vector<float>>& B) {
-        size_t n = A.size();           // количество строк в A
-        size_t m = A[0].size();        // количество столбцов в A
-        size_t p = B[0].size();        // количество столбцов в B
-        vector<vector<float>> C(n, vector<float>(p, 0.0f));
-        
+    // A: [n, m], B: [m, p] → возвращает Tensor [1, n, p] (batch_size = 1)
+    Tensor matmul(const Tensor& A, const Tensor& B) {
+        size_t n = A.seq_len;      // количество строк в A
+        size_t m = A.dim;          // количество столбцов в A
+        size_t p = B.dim;          // количество столбцов в B
+
+        Tensor C(1, n, p); // создаём Tensor для результата
+
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < p; ++j) {
+                float sum = 0.0f;
                 for (size_t k = 0; k < m; ++k) {
-                    C[i][j] += A[i][k] * B[k][j];
+                    sum += A.at(0, i, k) * B.at(0, k, j);
                 }
+                C.at(0, i, j) = sum;
             }
         }
         return C;
     }
 
     // Транспонирование матрицы
-    vector<vector<float>> transpose(const vector<vector<float>>& A) {
-        size_t n = A.size();
-        size_t m = A[0].size();
-        vector<vector<float>> T(m, vector<float>(n, 0.0f));
-        for (size_t i = 0; i < n; ++i) {
-            for (size_t j = 0; j < m; ++j) {
-                T[j][i] = A[i][j];
+    // A: [1, n, m] → возвращает Tensor [1, m, n]
+    Tensor transpose(const Tensor& A) {
+        Tensor T(1, A.dim, A.seq_len); // меняем местами seq_len и dim
+        for (size_t i = 0; i < A.seq_len; ++i) {
+            for (size_t j = 0; j < A.dim; ++j) {
+                T.at(0, j, i) = A.at(0, i, j);
             }
         }
         return T;
     }
-//вот до сих пор 
+
     // Softmax по строкам
-    vector<vector<float>> softmax(const vector<vector<float>>& A) {
-        vector<vector<float>> S = A;
-        for (size_t i = 0; i < A.size(); ++i) {
-            float max_val = *max_element(A[i].begin(), A[i].end());
+    // A: [1, n, m] → возвращает Tensor того же размера
+    Tensor softmax(const Tensor& A) {
+        Tensor S(1, A.seq_len, A.dim);
+        for (size_t i = 0; i < A.seq_len; ++i) {
+            float max_val = A.at(0, i, 0);
+            for (size_t j = 0; j < A.dim; ++j) {
+                if (A.at(0, i, j) > max_val) max_val = A.at(0, i, j);
+            }
+
             float sum = 0.0f;
-            for (float val : A[i]) sum += exp(val - max_val);
-            for (size_t j = 0; j < A[i].size(); ++j) S[i][j] = exp(A[i][j] - max_val) / sum;
+            for (size_t j = 0; j < A.dim; ++j) {
+                sum += exp(A.at(0, i, j) - max_val);
+            }
+
+            for (size_t j = 0; j < A.dim; ++j) {
+                S.at(0, i, j) = exp(A.at(0, i, j) - max_val) / sum;
+            }
         }
         return S;
     }
@@ -255,10 +289,16 @@ public:
 int main()
 {
     cout << "Hello World!\n";
+
+    // Создаём базовый токенизатор
     Tokenizer::ByteTokinizer tok;
 
     string word = "hello world  ";
+
+    // Кодируем строку в последовательность токенов
     vector<int> encoded = tok.encode(word);
+
+    // Декодируем обратно для проверки
     string decoded = tok.decode(encoded);
 
     cout << "Input: " << word << endl;
@@ -266,37 +306,41 @@ int main()
     cout << "Encoded: ";
     for (int id : encoded) cout << id << " ";
     cout << endl;
- // эмбеддинги размерностью 4
-    Embedding embedding(128);//эмбдинг и позиционный эмдинг в данном случае имеют прямую зависимость 
-    vector<vector<float>> embedded = embedding.encode_to_embedding(word);
+
+    // эмбеддинги размерностью 128
+    // эмбдинг и позиционный эмбеддинг в данном случае имеют прямую зависимость
+    Embedding embedding(128);
+
+    // получаем Tensor с эмбеддингами [1, seq_len, dim]
+    Tensor embedded = embedding.encode_to_embedding(word);
 
     // добавляем позиционное кодирование
-    // проясню - первое число на размерность эмбдинга( должен быть такой же как и embedding выше) второе число - максимальная длина последовательности
-    //говоря проще - это лимит, сколько токенов трансформер может “увидеть” одновременно.
-    PositionalEncoding pe(128, 256);//не забыть про адекватность. И да, эмбдингов это тоже касается
-    
-    vector<vector<float>> embedded_with_pos = pe.add_to_embeddings(embedded);
+    // первое число — размерность эмбединга (должен совпадать с embedding выше)
+    // второе число — максимальная длина последовательности
+    // проще говоря — это лимит, сколько токенов трансформер может “увидеть” одновременно
+    PositionalEncoding pe(128, 256);
+
+    Tensor embedded_with_pos = pe.add_to_embeddings(embedded);
 
     cout << "Decoded: " << decoded << endl;
 
     cout << "Embeddings:" << endl;
-    for (size_t i = 0; i < embedded.size(); i++)
+    for (size_t s = 0; s < embedded.seq_len; ++s)
     {
-        cout << "Token " << encoded[i] << ": ";
-        for (float val : embedded[i])
-            cout << val << " ";
+        cout << "Token " << encoded[s] << ": ";
+        for (int d = 0; d < embedded.dim; ++d)
+            cout << embedded.at(0, s, d) << " ";
         cout << endl;
     }
+
     cout << "Embeddings positional:" << endl;
-    for (size_t i = 0; i < embedded_with_pos.size(); i++)
+    for (size_t s = 0; s < embedded_with_pos.seq_len; ++s)
     {
-        cout << "Token " << encoded[i] << ": ";
-        for (float val : embedded_with_pos[i])
-            cout << val << " ";
+        cout << "Token " << encoded[s] << ": ";
+        for (int d = 0; d < embedded_with_pos.dim; ++d)
+            cout << embedded_with_pos.at(0, s, d) << " ";
         cout << endl;
     }
-    
 
     return 0;
-    
 }

@@ -8,21 +8,30 @@ using namespace std;
 
 class Tensor
 {
-    public:
-    vector<int> data;
-    size_t batch_size, seq_len, dim;
+public:
+    // храним все данные в одномерном массиве, теперь тип float для эмбеддингов
+    vector<float> data;
+
+    // размеры тензора
+    size_t batch_size; // сколько предложений/батчей в тензоре
+    size_t seq_len;    // сколько токенов в каждом предложении
+    size_t dim;        // размерность эмбеддинга (вектор, который хранит каждый токен)
     /*
-    batch_size — сколько предложений/батчей в тензоре
-    seq_len — сколько токенов в каждом предложении
-    dim — размерность эмбеддинга (вектор, который хранит каждый токен)
     size_t гарантирует, что все размеры неотрицательные и подходящего типа для адресации памяти.
     */
 
+    // конструктор: задаём размеры, инициализируем все элементы нулями
     Tensor(size_t b, size_t s, size_t d) : batch_size(b), seq_len(s), dim(d) {
-        data.resize(b * s * d, 0); // все элементы нули
+        data.resize(b * s * d, 0.0f); // все элементы нули
     }
 
-    int& at(size_t b, size_t s, size_t d) {
+    // доступ к элементу по координатам (b, s, d)
+    float& at(size_t b, size_t s, size_t d) {
+        return data[b * seq_len * dim + s * dim + d];
+    }
+
+    // константная версия доступа для случаев, когда не хотим менять данные
+    const float& at(size_t b, size_t s, size_t d) const {
         return data[b * seq_len * dim + s * dim + d];
     }
 
@@ -33,7 +42,7 @@ class Tensor
             for(size_t s = 0; s < seq_len; ++s){
                 cout << "  Token " << s << ": ";
                 for(size_t d = 0; d < dim; ++d){
-                    cout << at(b,s,d) << " ";
+                    cout << at(b,s,d) << " "; // вывод значений по координатам
                 }
                 cout << "\n";
             }

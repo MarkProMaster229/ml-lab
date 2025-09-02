@@ -6,72 +6,117 @@
 #include <algorithm>
 using namespace std;
 
-class Tokenizer
+// далее решаем задачу позиционирования слов для обработки через слой трансформера 
+// В трансформере порядок слов важен, потому что сам трансформер не видит порядок.
+class PositionalEncoding 
 {
-    public:
+    int dim;      // это размерность эмбеддинга
+    int max_len;  // максимальная длина последовательности
 
-    // словарь как ASCII и в навесок резервируем места старше 255(конец нумерации последнего символа)
-    struct Vocab
+    /*
+    positions — теперь используем Tensor вместо vector<vector<float>>.
+    Каждая строка соответствует позиции токена,
+    каждый столбец — компоненте позиционного вектора.
+    Размерность: [max_len, 1, dim], где batch_size=1.
+    */
+    Tensor positions;
+
+public:
+    // Конструктор создаёт позиции и заполняет их синусами и косинусами
+    // то что происходит ниже для меня пока магия но оно работает — у эмбдинга появляется позиция!
+    PositionalEncoding(int dim_, int max_len_ = 512) 
+        : dim(dim_), max_len(max_len_), positions(max_len_, 1, dim_)
     {
-        /*
-        Вокаб даёт нам правила соответствия:
-        если встретили спец-токен → добавляем его id (например, EOS = 258).
-        если встретили символ → берём его байтовое значение (например, 'h' = 104).
-        
-        Таким образом токенизатор не придумывает id случайно, он просто смотрит в таблицу «символ → число».
-        */
-        static constexpr int PAD = 256;//padding (добивание пустыми местами в батче, когда длины разные).
-        static constexpr int BOS = 257;//begin of sequence, токен начала последовательности.
-        static constexpr int EOS = 258;//end of sequence, токен конца последовательности.
-        static constexpr int UNK = 259;//unknown (неизвестный токен, если что-то не получилось закодировать).
-        
-        static constexpr int BASE = 256;//просто размер базовой части (все байты).
-        static constexpr int SIZE = 260;//общее количество токенов = 256 байтов + 4 спец-токена.
-    }; // <- точка с запятой обязательна после struct
+        for (int pos = 0; pos < max_len; ++pos) 
+        {
+            for (int i = 0; i < dim; ++i) 
+            {
+                float angle = pos / pow(10000.0f, 2.0f * (i / 2) / dim);
+                if (i % 2 == 0)
+                    positions.at(pos, 0, i) = sin(angle);
+                else
+                    positions.at(pos, 0, i) = cos(angle);
+            }
+        }
+    }
 
-    // основа токенизатора 
-    struct ByteTokinizer
+    // Метод добавляет позиционные кодировки к эмбеддингам
+    // embeddings — Tensor размерности [1, seq_len, dim]
+    Tensor add_to_embeddings(const Tensor& embeddings) 
     {
-        vector<int> encode(const string& text, bool add_bos=true, bool add_eos=true)
+        Tensor out(1, embeddings.seq_len, embeddings.dim); // создаём новый Tensor для выхода
+        for (size_t s = 0; s < embeddings.seq_len; ++s) 
         {
-            // Создаём пустой список токенов (ids)
-            // Если нужно — сразу добавляем спец-токен начала (BOS = 257).
-            vector<int> ids;
-            if(add_bos) ids.push_back(Vocab::BOS);
-            
-            /*
-            Берём строку посимвольно.
-            Каждый символ в C++ хранится в виде байта (число 0–255).
-            Кладём это число в список токенов.
-            Например "hi" - 'h' = 104, 'i' = 105.
-            */
-            for(unsigned char c: text)
+            for (int d = 0; d < dim; ++d) 
             {
-                ids.push_back((int)c);// каждый байт напрямую в id
+                // добавляем позицию к эмбеддингу токена
+                out.at(0, s, d) = embeddings.at(0, s, d) + positions.at(s, 0, d);
             }
-            // брат если слово кончилось кинь токен конца последовательности епта
-            // Возвращаем готовый список.
-            // Итого "hi" → [257, 104, 105, 258].
-            // где 257 - сообщает что это начало, 258 - конец, 104 -"h", 105 - "i" 
-            if (add_eos) ids.push_back(Vocab::EOS);
-            
-            return ids;
         }
-
-        // декодер для примера и проверки работоспособности самого токенизатора
-        string decode(const vector<int>& ids) 
-        {
-            string out;
-            for (int id : ids) 
-            {
-                if (0 <= id && id < Vocab::BASE) 
-                {
-                    out.push_back((char)id); // байт → символ
-                }
-                // спец-токены (BOS, EOS, PAD) обычно пропускаем, не нужны нам зачастую,
-                // но могут пригодится для анализа и поиска ошибок в обучающем датасете
-            }
-            return out;
-        }
-    };
+        return out;
+    }
+    // магия закончилась
 };
+
+class Transformer 
+{
+public:
+    // тут тупо базовые манипуляции с матрицами, не более
+
+    // Умножение двух матриц A * B
+    // A: [n, m], B: [m, p] → возвращает Tensor [1, n, p] (batch_size = 1)
+    Tensor matmul(const Tensor& A, const Tensor& B) {
+        size_t n = A.seq_len;      // количество строк в A
+        size_t m = A.dim;          // количество столбцов в A
+        size_t p = B.dim;          // количество столбцов в B
+
+        Tensor C(1, n, p); // создаём Tensor для результата
+
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < p; ++j) {
+                float sum = 0.0f;
+                for (size_t k = 0; k < m; ++k) {
+                    sum += A.at(0, i, k) * B.at(0, k, j);
+                }
+                C.at(0, i, j) = sum;
+            }
+        }
+        return C;
+    }
+
+    // Транспонирование матрицы
+    // A: [1, n, m] → возвращает Tensor [1, m, n]
+    Tensor transpose(const Tensor& A) {
+        Tensor T(1, A.dim, A.seq_len); // меняем местами seq_len и dim
+        for (size_t i = 0; i < A.seq_len; ++i) {
+            for (size_t j = 0; j < A.dim; ++j) {
+                T.at(0, j, i) = A.at(0, i, j);
+            }
+        }
+        return T;
+    }
+
+    // Softmax по строкам
+    // A: [1, n, m] → возвращает Tensor того же размера
+    Tensor softmax(const Tensor& A) {
+        Tensor S(1, A.seq_len, A.dim);
+        for (size_t i = 0; i < A.seq_len; ++i) {
+            float max_val = A.at(0, i, 0);
+            for (size_t j = 0; j < A.dim; ++j) {
+                if (A.at(0, i, j) > max_val) max_val = A.at(0, i, j);
+            }
+
+            float sum = 0.0f;
+            for (size_t j = 0; j < A.dim; ++j) {
+                sum += exp(A.at(0, i, j) - max_val);
+            }
+
+            for (size_t j = 0; j < A.dim; ++j) {
+                S.at(0, i, j) = exp(A.at(0, i, j) - max_val) / sum;
+            }
+        }
+        return S;
+    }
+
+};
+

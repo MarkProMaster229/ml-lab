@@ -6,92 +6,52 @@
 #include <algorithm>
 using namespace std;
 #include "Tokenizer.cpp"
+#include "Tensor.cpp"
 
 
-// размечаем эмбдинги
+
+//размечаем эмбдинги
 class Embedding : public Tokenizer
 {
 public:
-    int dim; // это размерность эмбеддинга, т.е. сколько чисел будет представлять один токен.
+    int dim; // размерность эмбеддинга, т.е. сколько чисел будет представлять один токен
+
     /*
     weights[token_id] — это вектор размером dim для конкретного токена.
-    vector<vector<float>> — двумерный вектор: строки — это токены, столбцы — параметры/веса (эмбеддинги).
+    Теперь используем Tensor вместо vector<vector<float>>, чтобы хранить эмбеддинги всех токенов.
     */
-    vector<vector<float>> weights;
+    Tensor weights;
 
-    // можно менять размер матрицы весов ради прикола можно поставить 512 но не рекомендую
-    Embedding(int dim_) : dim(dim_) 
+    // конструктор: инициализация весов нулями
+    Embedding(int dim_) : dim(dim_), weights(Vocab::SIZE, 1, dim_) 
     {
-        weights.resize(Vocab::SIZE, vector<float>(dim, 0.0f)); // инициализация нулями - но по сути это не совсем верно 
-        // обьясняю почему - при обучении намного легче будет корректирваоть ошибку методом обратного распространения 
-        // если веса будут изначально разбросаны, в ином случае все наши слова равны по смыслу с начала
+        // по сути нули — неидеально для обучения, лучше использовать случайное распределение
+        // например: weights.at(token_id, 0, d) = (rand() / (float)RAND_MAX - 0.5f) * 0.01f;
     }
 
     // Получение эмбеддинга конкретного токена
-    // Взял токен по его id и вернул вектор эмбеддинга этого токена.
-    // Пример: токен 'h' = 104 → вернётся weights[104], который размерностью dim.
-    vector<float> get_embedding(int token_id)
+    // Раньше возвращали vector<float>, теперь просто копируем в Tensor на 1 токен
+    Tensor get_embedding(int token_id)
     {
-        return weights[token_id];
+        Tensor emb(1, 1, dim); // 1 батч, 1 токен
+        for (int d = 0; d < dim; ++d)
+            emb.at(0, 0, d) = weights.at(token_id, 0, d);
+        return emb;
     }
 
-    /*
-    Сначала мы токенизируем текст через ByteTokinizer(), получаем список токенов.
-    Потом для каждого токена берём его эмбеддинг через get_embedding.
-    В итоге получаем матрицу эмбеддингов размерности [кол-во токенов, dim].
-    */
-    vector<vector<float>> encode_to_embedding(const string& text)
+    // Кодируем строку в последовательность эмбеддингов
+    Tensor encode_to_embedding(const string& text)
     {
         vector<int> token_ids = ByteTokinizer().encode(text);
-        vector<vector<float>> out;
-        for(int id : token_ids) out.push_back(get_embedding(id));
+        Tensor out(1, token_ids.size(), dim); // 1 батч, seq_len = количество токенов
+
+        for (size_t s = 0; s < token_ids.size(); ++s)
+        {
+            int id = token_ids[s];
+            for (int d = 0; d < dim; ++d)
+                out.at(0, s, d) = weights.at(id, 0, d);
+        }
+
         return out;
     }
-};
-
-// далее решаем задачу позиционирования слов для обработки через слой трансформера 
-// В трансформере порядок слов важен, потому что сам трансформер не видит порядок.
-class PositionalEncoding 
-{
-    int dim; // это размерность эмбеддинга
-    int max_len; // максимальная длина последовательности
-
-    /*
-    positions — это двумерный массив, в котором каждая строка соответствует позиции токена,
-    а каждый столбец — компоненте позиционного вектора.
-    Размерность: [max_len][dim].
-    */
-    vector<vector<float>> positions;
-
-public:
-    // то что происходит ниже для меня пока магия но оно рабоает - у эмбдинга появляется позиция!
-    PositionalEncoding(int dim_, int max_len_ = 512) : dim(dim_), max_len(max_len_) 
-    {
-        positions.resize(max_len, vector<float>(dim, 0.0f));
-        for (int pos = 0; pos < max_len; ++pos) 
-        {
-            for (int i = 0; i < dim; ++i) 
-            {
-                positions[pos][i] = pos / pow(10000.0, 2.0 * (i / 2) / dim);
-                if (i % 2 == 0)
-                    positions[pos][i] = sin(positions[pos][i]);
-                else
-                    positions[pos][i] = cos(positions[pos][i]);
-            }
-        }
-    }
-
-    vector<vector<float>> add_to_embeddings(const vector<vector<float>>& embeddings) 
-    {
-        vector<vector<float>> out = embeddings;
-        for (size_t i = 0; i < embeddings.size(); ++i) 
-        {
-            for (int j = 0; j < dim; ++j) 
-            {
-                out[i][j] += positions[i][j];
-            }
-        }
-        return out;
-    }
-    // магия закончилась 
 };
