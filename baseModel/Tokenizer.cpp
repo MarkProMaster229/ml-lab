@@ -8,15 +8,14 @@ using namespace std;
 class Tokenizer
 {
     public:
-        static constexpr int PAD = 1;//padding (добивание пустыми местами в батче, когда длины разные).
-        static constexpr int BOS = 2;//begin of sequence, токен начала последовательности.
-        static constexpr int EOS = 3;//end of sequence, токен конца последовательности.
-        static constexpr int UNK = 4;//unknown (неизвестный токен, если что-то не получилось закодировать).
+        static constexpr int PAD = 256;//padding (добивание пустыми местами в батче, когда длины разные).
+        static constexpr int BOS = 257;//begin of sequence, токен начала последовательности.
+        static constexpr int EOS = 258;//end of sequence, токен конца последовательности.
+        static constexpr int UNK = 259;//unknown (неизвестный токен, если что-то не получилось закодировать).
         
-        static constexpr int BASE = 5;//просто размер базовой части (все байты).
-        static constexpr int SIZE = 6;//общее количество токенов = 256 байтов + 4 спец-токена.
-
-        void myTokinezer(string a)
+        static constexpr int BASE = 256;//просто размер базовой части (все байты).
+        static constexpr int SIZE = 260;//общее количество токенов = 256 байтов + 4 спец-токена.
+        void myTokinezer(string text)
         {
             unordered_map<char, int> mapAllIcon;
             vector<int> finalyWorld;
@@ -27,25 +26,24 @@ class Tokenizer
             mapAllIcon['[UNK]'] = UNK;
             mapAllIcon['[BASE]'] = BASE;
             mapAllIcon['[SIZE]'] = SIZE;
-
-            string rus = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
-            for (char i : rus)
+            
+            vector<int> token;
+            token.push_back(BOS);
+            for (char i:text)
             {
-                mapAllIcon[i] = rez++;
+                if(mapAllIcon.count(i))
+                   token.push_back(mapAllIcon[i]);
+                else
+                token.push_back(UNK);
             }
-
-            finalyWorld[0] = 2;
-
+            token.push_back(EOS);
+            for (int i = 0; i<token.size(); i++)
+            {
+                cout<<token[i] <<" ";
+            }
+            cout << endl;
             
 
-            
-
-            cout<<"test";
-
-            for(int i = 0;i<44;i++)
-            {
-                cout<<mapAllIcon[i];
-            }
         }
     
 };
