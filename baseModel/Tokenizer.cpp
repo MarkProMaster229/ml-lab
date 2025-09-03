@@ -27,6 +27,7 @@ class Tokenizer
             mapAllIcon['[BASE]'] = BASE;
             mapAllIcon['[SIZE]'] = SIZE;
             
+            
             vector<int> token;
             token.push_back(BOS);
             for (char i:text)
