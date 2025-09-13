@@ -2,7 +2,9 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <cassert>
+#include "json.hpp"
+using json = nlohmann::json;
+
 using namespace std;
 
 class Tensor
@@ -81,5 +83,10 @@ public:
         file.close();
     }
 };
+class Embeding
+{
+    public:
 
+
+};
 

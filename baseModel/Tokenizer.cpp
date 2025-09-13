@@ -15,7 +15,7 @@ class Tokenizer
 
         static constexpr int BASE = 256;//просто размер базовой части (все байты).
         static constexpr int SIZE = 260;//общее количество токенов = 256 байтов + 4 спец-токена.
-        void myTokinezer(string text)
+        vector<int> myTokinezer(string text)
         {
             unordered_map<char, int> mapAllIconChar;
             unordered_map<string, int> mapAllIconStr;
@@ -49,6 +49,7 @@ class Tokenizer
                 cout<<token[i] <<" ";
             }
             cout << endl;
+            return token;
         }
 
 };

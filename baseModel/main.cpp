@@ -15,7 +15,7 @@ int main()
     tok.myTokinezer(a);
 
 
-    Tensor t(2, 3, 7);
+    Tensor t(2, 3, 10);
 
     // Заполняем случайными числами
     for (int i = 0; i < t.shape[0]; ++i)
