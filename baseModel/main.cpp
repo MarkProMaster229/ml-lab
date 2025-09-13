@@ -30,4 +30,7 @@ int main()
 
     cout << "t2[1][2][3] = " << t2.at(1, 2, 3) << endl;
 
+    Embeding em;
+    em.GetAnaliz();
+
 }

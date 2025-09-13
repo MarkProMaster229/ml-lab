@@ -3,6 +3,9 @@
 #include <string>
 #include <fstream>
 #include "json.hpp"
+
+
+
 using json = nlohmann::json;
 
 using namespace std;
@@ -83,10 +86,40 @@ public:
         file.close();
     }
 };
-class Embeding
-{
-    public:
 
+class Embeding {
+public:
+    Tokenizer tokenizator;
 
+    // Метод для обработки JSON и получения токенов
+    vector<vector<int>> GetAnaliz() {
+        ifstream file("test.json");
+        if (!file.is_open()) {
+            cerr << "Cannot open JSON file!" << endl;
+            return {};
+        }
+
+        json j;
+        file >> j;
+
+        return processJSON(j);
+    }
+
+private:
+    // Вспомогательный метод, который превращает JSON в массив токенов
+    vector<vector<int>> processJSON(const json& j) {
+        vector<vector<int>> sequences;
+
+        for (auto& [key, value] : j.items()) {
+            if (value.is_array()) {
+                string sentence;
+                for (auto& w : value) {
+                    if (w.is_string()) sentence += w.get<string>();
+                }
+                sequences.push_back(tokenizator.myTokinezer(sentence));
+            }
+        }
+
+        return sequences;
+    }
 };
-
