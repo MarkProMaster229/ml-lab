@@ -92,7 +92,8 @@ public:
     Tokenizer tokenizator;
 
     // Метод для обработки JSON и получения токенов
-    vector<vector<int>> GetAnaliz() {
+    vector<vector<int>> GetAnaliz()
+    {
         ifstream file("test.json");
         if (!file.is_open()) {
             cerr << "Cannot open JSON file!" << endl;
@@ -105,7 +106,6 @@ public:
         return processJSON(j);
     }
 
-private:
     // Вспомогательный метод, который превращает JSON в массив токенов
     vector<vector<int>> processJSON(const json& j) {
         vector<vector<int>> sequences;
