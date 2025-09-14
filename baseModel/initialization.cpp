@@ -3,15 +3,17 @@
 #include <string>
 #include <cstdint>
 
+
 class initialization
 {
 public:
+    // метод генерации случайного тензора
     Tensor freeRandom(const std::vector<int>& tokens, int embedding_dim)
     {
-        srand(time(nullptr)); // разные случайные числа каждый запуск
+        srand(time(nullptr));
 
-        int batch = 1;                // одно предложение
-        int seq_len = tokens.size();  // сколько токенов в предложении
+        int batch = 1;
+        int seq_len = tokens.size();
 
         Tensor ten(batch, seq_len, embedding_dim);
 
@@ -20,7 +22,22 @@ public:
                 ten.at(0, j, k) = (float)rand() / RAND_MAX;
             }
         }
-
         return ten;
+    }
+
+    void run()
+    {
+        Embeding em;
+        std::vector<std::vector<int>> all_tokens = em.GetAnaliz();
+
+        int embedding_dim = 10;
+        Tensor t = freeRandom(all_tokens[0], embedding_dim);
+
+        t.save("tensor.pt");
+
+        Tensor t2;
+        t2.load("tensor.pt");
+
+        std::cout << "t2[0][0][0] = " << t2.at(0, 0, 0) << std::endl;
     }
 };
