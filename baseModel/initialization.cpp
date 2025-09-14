@@ -13,16 +13,18 @@ public:
     {
         srand(time(nullptr));
 
-        int batch = 1;
+        int batch = 4;
         int seq_len = tokens.size();
 
         Tensor ten(batch, seq_len, embedding_dim);
 
-        for (int j = 0; j < seq_len; j++) {
+    for (int i = 0; i < batch; i++) {          // цикл по предложениям
+        for (int j = 0; j < seq_len; j++) {    // цикл по токенам
             for (int k = 0; k < embedding_dim; k++) {
-                ten.at(0, j, k) = (float)rand() / RAND_MAX;
+                ten.at(i, j, k) = (float)rand() / RAND_MAX;
             }
         }
+    }
         return ten;
     }
 
