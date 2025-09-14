@@ -2,8 +2,10 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <cmath>
 #include "Tokenizer.cpp"
 #include "Tensor.cpp"
+#include "Transformer.cpp"
 
 class initialization
 {
@@ -63,5 +65,26 @@ public:
 
         std::cout << "t2[0][0][0] = " << t2.at(0, 0, 0) << std::endl;
         std::cout << "Shape: [ " << t2.shape[0] << " " << t2.shape[1] << " " << t2.shape[2] << " ]" << std::endl;
+        int max_seq_len = 0;
+        for (auto &tokens : all_tokens)
+           if (tokens.size() > max_seq_len)
+               max_seq_len = tokens.size();
+        int batch = all_tokens.size();
+        positioning pos;
+        pos.createPositions(max_seq_len,embedding_dim, batch);
+
+// Генерируем позиционные вектора для всех предложений
+Tensor pos_enc = pos.createPositions(max_seq_len, embedding_dim, batch);
+
+// Печатаем позиционные вектора для первого элемента батча
+for (int j = 0; j < max_seq_len; j++) {
+    std::cout << "Pos " << j << ": ";
+    for (int k = 0; k < embedding_dim; k++) {
+        std::cout << pos_enc.at(0, j, k) << " ";
+    }
+    std::cout << std::endl;
+}
+
+
     }
 };
