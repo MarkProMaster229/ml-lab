@@ -2,7 +2,8 @@
 #include <vector>
 #include <string>
 #include <cstdint>
-
+#include "Tokenizer.cpp"
+#include "Tensor.cpp"
 
 class initialization
 {

@@ -2,8 +2,6 @@
 #include <vector>
 #include <string>
 #include <cstdint>
-#include "Tokenizer.cpp"
-#include "Tensor.cpp"
 #include "initialization.cpp"
 using namespace std;
 
