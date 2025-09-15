@@ -27,9 +27,33 @@ class positioning
             }
 
         }
+
         return t;
     }
 
+
+
+};
+
+class mask
+{
+    public:
+    Tensor createMask(const std::vector<std::vector<int>>& all_tokens) {
+    int batch = all_tokens.size();
+    int max_seq_len = 0;
+    for (auto &tokens : all_tokens)
+        if (tokens.size() > max_seq_len)
+            max_seq_len = tokens.size();
+
+    Tensor mask(batch, max_seq_len, 1); // один канал на токен
+    for (int i = 0; i < batch; i++) {
+        int seq_len = all_tokens[i].size();
+        for (int j = 0; j < max_seq_len; j++) {
+            mask.at(i, j, 0) = (j < seq_len) ? 1.0f : 0.0f; // 1.0 = токен, 0.0 = padding
+        }
+    }
+    return mask;
+}
 
 
 };
