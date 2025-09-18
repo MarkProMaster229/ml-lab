@@ -2,7 +2,8 @@
 #include <vector>
 #include <string>
 #include <fstream>
-
+#include "Tensor.cpp"
+using namespace std;
 
 class positioning
 {
@@ -94,11 +95,22 @@ class Transformer
     формально формула выглядит вот так -
     head_i = Attention(X * Wq_i, X * Wk_i, X * Wv_i)
 
+    пока делаем одну голову дальше смотрим по сходимости или просто потом решу
 
 
 
 
     */
+
+    vector<float> head()
+    {
+
+        Tensor t;
+        t.load("tensor.pt");
+        float val = t.at(i,j,k) // i j k из tensor.pt
+
+
+    }
 
 
 };
