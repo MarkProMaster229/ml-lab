@@ -101,44 +101,16 @@ class Transformer
 
 
     */
-struct QKV {
-    Tensor Q;
-    Tensor K;
-    Tensor V;
-};
 
-QKV head() {
-    Tensor X;
-    X.load("tensor.pt");
+    vector<float> head()
+    {
 
-int batch = X.shape[0];         // batch
-int seq_len = X.shape[1];       // seq_len
-int embedding_dim = X.shape[2]; // embedding_dim
+        Tensor t;
+        t.load("tensor.pt");
+        float val = t.at(i,j,k) // i j k из tensor.pt
 
-int dk = embedding_dim;         //размер Q/K/V для одной головы
 
-    Tensor Q(batch, seq_len, dk);
-    Tensor K(batch, seq_len, dk);
-    Tensor V(batch, seq_len, dk);
-
-    for (int b = 0; b < batch; b++) {
-        for (int i = 0; i < seq_len; i++) {
-            for (int j = 0; j < dk; j++) {
-                float q_val = 0, k_val = 0, v_val = 0;
-                for (int k = 0; k < embedding_dim; k++) {
-                    q_val += X.at(b, i, k) * Wq.at(k, j);
-                    k_val += X.at(b, i, k) * Wk.at(k, j);
-                    v_val += X.at(b, i, k) * Wv.at(k, j);
-                }
-                Q.at(b, i, j) = q_val;
-                K.at(b, i, j) = k_val;
-                V.at(b, i, j) = v_val;
-            }
-        }
     }
-
-    return {Q, K, V};
-}
 
 
 };
