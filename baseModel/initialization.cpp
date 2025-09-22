@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cmath>
 #include "Tokenizer.cpp"
-#include "Tensor.cpp"
+
 #include "Transformer.cpp"
 class initialization {
 public:
