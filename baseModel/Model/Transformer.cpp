@@ -2,6 +2,11 @@
 #include <iostream>
 #include <cmath>
 
+#include "../Generation/Tensor.hpp"
+#include "../Generation/Position.hpp"
+#include "../Generation/MaskGenerator.hpp"
+#include "../Generation/Embedding.hpp"
+
     /*
     у нас есть эмбединги в тензоре так ?
     сам тензор в pt файле по верному если

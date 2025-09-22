@@ -1,8 +1,8 @@
-#pragma once
-#include <vector>
-#include <string>
-#include <fstream>
-#include "Tensor.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Generation/Tensor.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Generation/Position.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Generation/MaskGenerator.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Generation/Embedding.hpp"
+
 
 class Transformer {
 public:
