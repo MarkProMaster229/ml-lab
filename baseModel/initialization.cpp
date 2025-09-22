@@ -4,8 +4,11 @@
 #include <cstdint>
 #include <cmath>
 #include "Tokenizer.cpp"
-
 #include "Transformer.cpp"
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 class initialization {
 public:
 
@@ -64,17 +67,23 @@ public:
 
         int embedding_dim = 10;
 
-        // Генерируем тензор для всех предложений
-        Tensor t = freeRandom(all_tokens, embedding_dim);
+        std::string tensor_file = "tensor.pt";
+        Tensor final_input;
 
-        // Сохраняем и загружаем для проверки
-        t.save("tensor.pt");
+        if (fs::exists(tensor_file)) {
+            std::cout << "Файл tensor.pt найден, загружаем существующий тензор." << std::endl;
+            final_input.load(tensor_file);
+        }
+        else
+        {
+            std::cout << "Файл tensor.pt не найден, создаём новый тензор." << std::endl;
+            final_input = freeRandom(all_tokens, embedding_dim);
+            final_input.save(tensor_file);
+        }
 
-        Tensor t2;
-        t2.load("tensor.pt");
-
-        std::cout << "t2[0][0][0] = " << t2.at(0, 0, 0) << std::endl;
-        std::cout << "Shape: [ " << t2.shape[0] << " " << t2.shape[1] << " " << t2.shape[2] << " ]" << std::endl;
+        // Проверка первого элемента и формы тензора
+        std::cout << "final_input[0][0][0] = " << final_input.at(0, 0, 0) << std::endl;
+        std::cout << "Shape: [ " << final_input.shape[0] << " " << final_input.shape[1] << " " << final_input.shape[2] << " ]" << std::endl;
 
         int max_seq_len = 0;
         for (auto &tokens : all_tokens)
@@ -95,9 +104,6 @@ public:
             }
             std::cout << std::endl;
         }
-
-        // Генерируем финальный вход для трансформера
-        Tensor final_input = freeRandom(all_tokens, embedding_dim);
 
         // Генерируем маску для паддингов
         mask m;

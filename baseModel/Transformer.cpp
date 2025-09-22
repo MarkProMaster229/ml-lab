@@ -169,17 +169,10 @@ struct QKV {
         in.close();
     }
 
-QKV head() {
-    Tensor X;
-    X.load("tensor.pt");
-
-int batch = X.shape[0];         // batch
-int seq_len = X.shape[1];       // seq_len
-int embedding_dim = X.shape[2]; // embedding_dim
-
-int dk = embedding_dim;         //размер Q/K/V для одной головы, квадратная матрица так как dk = embedding_dim как я понимаю
-// на квадратной матрице не сделать множество голов, так что лучше всего использовать - dk = embedding_dim / num_heads
-// то есть каждая голова будет работать с частью эмбединга вроде как, но пока в любом случае мы работает с одной головой
+QKV head(Tensor& X) {
+    int batch = X.shape[0];
+    int seq_len = X.shape[1];
+    int embedding_dim = X.shape[2];
 
     Tensor Q(batch, seq_len, dk);
     Tensor K(batch, seq_len, dk);
