@@ -86,7 +86,7 @@ public:
         file.close();
     }
 };
-
+//test exp
 class Embeding {
 public:
     Tokenizer tokenizator;
