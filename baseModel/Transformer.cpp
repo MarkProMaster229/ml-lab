@@ -155,6 +155,19 @@ struct QKV {
     Tensor K;
     Tensor V;
 };
+    Transformer(int embedding_dim, int dk)
+        : embedding_dim(embedding_dim), dk(dk),
+          Wq(embedding_dim * dk),
+          Wk(embedding_dim * dk),
+          Wv(embedding_dim * dk) {}
+
+        void load_weights(const std::string& filename) {
+        std::ifstream in(filename, std::ios::binary);
+        in.read(reinterpret_cast<char*>(Wq.data()), Wq.size() * sizeof(float));
+        in.read(reinterpret_cast<char*>(Wk.data()), Wk.size() * sizeof(float));
+        in.read(reinterpret_cast<char*>(Wv.data()), Wv.size() * sizeof(float));
+        in.close();
+    }
 
 QKV head() {
     Tensor X;
@@ -177,9 +190,9 @@ int dk = embedding_dim;         //размер Q/K/V для одной голо�
             for (int j = 0; j < dk; j++) {
                 float q_val = 0, k_val = 0, v_val = 0;
                 for (int k = 0; k < embedding_dim; k++) {
-                    q_val += X.at(b, i, k) * Wq.at(k, j);
-                    k_val += X.at(b, i, k) * Wk.at(k, j);
-                    v_val += X.at(b, i, k) * Wv.at(k, j);
+                    q_val += X.at(b, i, k) * Wq[k * dk + j];
+                    k_val += X.at(b, i, k) * Wk[k * dk + j];
+                    v_val += X.at(b, i, k) * Wv[k * dk + j];
                 }
                 Q.at(b, i, j) = q_val;
                 K.at(b, i, j) = k_val;
@@ -190,6 +203,8 @@ int dk = embedding_dim;         //размер Q/K/V для одной голо�
 
     return {Q, K, V};
 }
-
+    int embedding_dim;
+    int dk;
+    std::vector<float> Wq, Wk, Wv;
 
 };
