@@ -3,6 +3,7 @@
 #include "../Generation/Position.hpp"
 #include "../Generation/Tensor.hpp"
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/Embedding.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Generation/WeightGenerator.hpp"
 Runner::Runner(int embedding_dim, int dk)
     : embedding_dim(embedding_dim), dk(dk), transformer(embedding_dim, dk), batchGen(embedding_dim) {}
 
@@ -24,6 +25,18 @@ void Runner::run() {
         std::cout << "Файл tensor.pt не найден, создаём новый тензор." << std::endl;
         final_input = batchGen.createInputTensor(all_tokens);
         final_input.save(tensor_file);
+    }
+    std::string weights_file = "weights.pt";
+
+    WeightGenerator wg(embedding_dim, dk);
+    if (fs::exists(weights_file)) {
+        std::cout << "weights.pt найден, загружаем..." << std::endl;
+        wg.load(weights_file);
+    }
+    else {
+        std::cout << "weights.pt не найден, генерируем..." << std::endl;
+        wg.initialize();
+        wg.save(weights_file);
     }
 
     Tensor mask_tensor = batchGen.createMask(all_tokens);
