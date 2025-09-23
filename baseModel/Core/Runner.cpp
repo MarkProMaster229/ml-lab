@@ -49,4 +49,53 @@ void Runner::run() {
               << mask_tensor.shape[0] << " "
               << mask_tensor.shape[1] << " "
               << mask_tensor.shape[2] << "]" << std::endl;
+
+//TODO - дебаг, проверка работы головы внимания
+
+/*
+
+Final input shape: [3 32 128]
+
+Q shape: [3 32 64]
+K shape: [3 32 64]
+V shape: [3 32 64]
+
+рассмотрим то что мы получили на выходе
+почему все параметры повторяются ?
+   потому что у нас только одна голова внимания
+что такое 3?
+   это batch size - кол-во последовательностей прогоняемых через трансформер
+что такое 32?
+   это seq_len - длинна последовательности
+что такое 64?
+   это dk напомню - dk будет являться половиной от embedding_dim
+
+вот что мне не нравится это Mask shape: [3 32 1]
+    3 - batch size - хорошо
+    32 - seq_len - приемлимо
+    1 - странно - типо мы храним только одно значение на токен?
+*/
+    Transformer transformer(embedding_dim, dk);
+transformer.load_weights("weights.pt");
+
+Transformer::QKV qkv = transformer.head(final_input);
+
+std::cout << "Q shape: ["
+          << qkv.Q.shape[0] << " "
+          << qkv.Q.shape[1] << " "
+          << qkv.Q.shape[2] << "]\n";
+
+std::cout << "K shape: ["
+          << qkv.K.shape[0] << " "
+          << qkv.K.shape[1] << " "
+          << qkv.K.shape[2] << "]\n";
+
+std::cout << "V shape: ["
+          << qkv.V.shape[0] << " "
+          << qkv.V.shape[1] << " "
+          << qkv.V.shape[2] << "]\n";
+
+
+//TODO - конец дебаг строк!
+
 }
