@@ -70,10 +70,10 @@ V shape: [3 32 64]
 что такое 64?
    это dk напомню - dk будет являться половиной от embedding_dim
 
-вот что мне не нравится это Mask shape: [3 32 1]
-    3 - batch size - хорошо
-    32 - seq_len - приемлимо
-    1 - странно - типо мы храним только одно значение на токен?
+вид маски(маска по Causal / Autoregressive ) сейчас -
+Mask shape: [3 32 32]
+квадратная матрица 32X32
+
 */
     Transformer transformer(embedding_dim, dk);
 transformer.load_weights("weights.pt");
