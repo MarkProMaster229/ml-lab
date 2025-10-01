@@ -18,6 +18,30 @@ Wv ∈ ℝ^(embedding_dim × dk)
 #include <vector>
 #include <string>
 #include <fstream>
+#include <Tensor.hpp>
+
+Tensor operator*(const Tensor& X, const std::vector<float>& W) {
+    int batch = X.shape[0];
+    int seq_len = X.shape[1];
+    int embedding_dim = X.shape[2];
+    int dk = W.size() / embedding_dim;
+
+    Tensor result(batch, seq_len, dk);
+
+    for (int b = 0; b < batch; ++b) {
+        for (int s = 0; s < seq_len; ++s) {
+            for (int k = 0; k < dk; ++k) {
+                float val = 0.0f;
+                for (int d = 0; d < embedding_dim; ++d) {
+                    val += X.at(b, s, d) * W[d * dk + k];
+                }
+                result.at(b, s, k) = val;
+            }
+        }
+    }
+
+    return result;
+}
 
 class Logit
 {
@@ -82,7 +106,27 @@ struct AttentionWeights {
     std::vector<float>& getWk() { return Wk; }
     std::vector<float>& getWv() { return Wv; }
 };
+struct QKV {
+    Tensor Q;
+    Tensor K;
+    Tensor V;
+};
+QKV complitle(const Tensor& X, const AttentionWeights& weights)
+{
+    int batch = X.shape[0];
+    int seq_len = X.shape[1];
+    int dk = weights.dk;
 
 
+    Tensor Q(batch, seq_len, dk);
+    Tensor K(batch, seq_len, dk);
+    Tensor V(batch, seq_len, dk);
+
+    Q = X * weights.Wq;
+    K = X * weights.Wk;
+    V = X * weights.Wv;
+
+    return { Q, K, V };
+}
 
 };
