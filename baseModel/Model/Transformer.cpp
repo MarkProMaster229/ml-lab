@@ -43,45 +43,4 @@
 
 
     */
-
-Transformer::Transformer(int embedding_dim, int dk)
-    : embedding_dim(embedding_dim), dk(dk),
-      Wq(embedding_dim * dk),
-      Wk(embedding_dim * dk),
-      Wv(embedding_dim * dk) {}
-
-void Transformer::load_weights(const std::string& filename) {
-    std::ifstream in(filename, std::ios::binary);
-    in.read(reinterpret_cast<char*>(Wq.data()), Wq.size() * sizeof(float));
-    in.read(reinterpret_cast<char*>(Wk.data()), Wk.size() * sizeof(float));
-    in.read(reinterpret_cast<char*>(Wv.data()), Wv.size() * sizeof(float));
-    in.close();
-}
-
-Transformer::QKV Transformer::head(Tensor& X) {
-    int batch = X.shape[0];
-    int seq_len = X.shape[1];
-    int embedding_dim = X.shape[2];
-
-    Tensor Q(batch, seq_len, dk);
-    Tensor K(batch, seq_len, dk);
-    Tensor V(batch, seq_len, dk);
-
-    for (int b = 0; b < batch; b++) {
-        for (int i = 0; i < seq_len; i++) {
-            for (int j = 0; j < dk; j++) {
-                float q_val = 0, k_val = 0, v_val = 0;
-                for (int k = 0; k < embedding_dim; k++) {
-                    q_val += X.at(b, i, k) * Wq[k * dk + j];
-                    k_val += X.at(b, i, k) * Wk[k * dk + j];
-                    v_val += X.at(b, i, k) * Wv[k * dk + j];
-                }
-                Q.at(b, i, j) = q_val;
-                K.at(b, i, j) = k_val;
-                V.at(b, i, j) = v_val;
-            }
-        }
-    }
-
-    return {Q, K, V};
-}
+// пересмотрена реализация на более мягкую(уже без хард кода))) )

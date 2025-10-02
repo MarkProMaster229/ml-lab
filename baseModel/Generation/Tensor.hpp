@@ -10,6 +10,13 @@ public:
     std::vector<float> data;    // хранит числа тензора
     std::vector<int> shape;     // размеры [batch, seq_len, embedding_dim]
     std::vector<int> strides;   // смещения по осям
+    // так надо
+        Tensor operator/(float scalar) const {
+        Tensor result = *this; // создаём копию
+        for (auto& v : result.data)
+            v /= scalar;
+        return result;
+    }
 
     // Конструктор пустого тензора (для загрузки)
     Tensor() {}
