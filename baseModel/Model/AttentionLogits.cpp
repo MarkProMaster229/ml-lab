@@ -87,6 +87,7 @@ QKV complitle(const Tensor& X, const AttentionWeights& weights) {
     V = X * weights.getWv();
 
     return { Q, K, V };
+
 }
 
 } // namespace Logit

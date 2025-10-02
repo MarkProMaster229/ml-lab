@@ -87,7 +87,6 @@ std::cout << "Output shape: ["
           << output.shape[1] << " "
           << output.shape[2] << "]\n";
 
-
 //TODO - конец дебаг строк!
 
 }
