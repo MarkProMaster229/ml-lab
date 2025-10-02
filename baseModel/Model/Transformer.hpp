@@ -5,7 +5,6 @@
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/MaskGenerator.hpp"
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/Embedding.hpp"
 
-// подключаем только заголовок AttentionLogits
 #include "AttentionLogits.hpp"
 
 Tensor matmul(const Tensor& A, const Tensor& B_transposed);
@@ -18,7 +17,7 @@ public:
     Transformer(int embedding_dim_, int dk_);
 
     void load_weights(const std::string& filename);
-    Tensor forward(Tensor& X); // объявление функции
+    Tensor forward(Tensor& X);
 
 private:
     int embedding_dim;
