@@ -75,25 +75,17 @@ Mask shape: [3 32 32]
 квадратная матрица 32X32
 
 */
-    Transformer transformer(embedding_dim, dk);
+Transformer transformer(embedding_dim, dk);
 transformer.load_weights("weights.pt");
 
-Transformer::QKV qkv = transformer.head(final_input);
+// Пропускаем через голову внимания
+Tensor output = transformer.forward(final_input);
 
-std::cout << "Q shape: ["
-          << qkv.Q.shape[0] << " "
-          << qkv.Q.shape[1] << " "
-          << qkv.Q.shape[2] << "]\n";
-
-std::cout << "K shape: ["
-          << qkv.K.shape[0] << " "
-          << qkv.K.shape[1] << " "
-          << qkv.K.shape[2] << "]\n";
-
-std::cout << "V shape: ["
-          << qkv.V.shape[0] << " "
-          << qkv.V.shape[1] << " "
-          << qkv.V.shape[2] << "]\n";
+// Дебаг формы output
+std::cout << "Output shape: ["
+          << output.shape[0] << " "
+          << output.shape[1] << " "
+          << output.shape[2] << "]\n";
 
 
 //TODO - конец дебаг строк!

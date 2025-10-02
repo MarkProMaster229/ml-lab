@@ -11,10 +11,11 @@
 ```bash
 cd /mnt/storage/product/ml-lab/baseModel  # свой путь
 
-g++ -std=c++17 -g \
--IGeneration -IModel -ICore \
-Core/main.cpp Core/Runner.cpp Core/BatchGenerator.cpp Model/Transformer.cpp \
--o Core/main.out
+g++ -std=c++17 -g -IGeneration -IModel -ICore \
+    Core/main.cpp Core/Runner.cpp Core/BatchGenerator.cpp \
+    Model/Transformer.cpp Model/AttentionLogits.cpp \
+    -o Core/main.out
+
 ```
 
 Запуск
