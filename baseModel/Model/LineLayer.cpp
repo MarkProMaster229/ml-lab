@@ -27,3 +27,21 @@ b_out: vocab_size
     //auto probs = predict_next_token_probs(transformer_output, batch_index);
     //return std::distance(probs.begin(), std::max_element(probs.begin(), probs.end()));
 //}
+
+//тест!
+class LineLayer
+{
+    int dk;           // размерность выхода трансформера
+    int vocab_size;   // размер словаря
+    std::vector<float> W_out; // матрица [vocab_size * dk]
+    std::vector<float> b_out; // смещение [vocab_size]
+
+    public:
+    LineLayer(int dk_, int vocab_size_)
+    : dk(dk_), vocab_size(vocab_size_),
+    W_out(vocab_size_ * dk_, 0.0f),  //нулями
+    b_out(vocab_size_, 0.0f)        // и смещение тоже нулями
+    {}
+
+
+};
