@@ -113,4 +113,58 @@ class LineLayer
         for (auto &w : W_out) w = dist(gen);
         for (auto &b : b_out) b = dist(gen);
     }
+
+    /*
+    далее для линейного слоя необходимо сделать взятие
+    Tensor output = transformer.forward(final_input); всех пареметров из
+    трасформера и прогнать через LineLayer до получения логитов и вероятностей
+    далее эти логиты прогнать через - softmax получить сухоую весовую вероятность
+    далее сопоставить со словарем - вернуться к  токенизатору благо он посимвольный
+    это сильно упростит задачу
+    важно!
+    linePosition.initialize(vocab_size, dk); - если если ещё не инициализирован
+    linePosition.forward(output); - проход
+
+┌───────────────────────────┐
+│       LineLayer           │
+│  (линейный слой проекции) │
+└───────────────────────────┘
+        │ logits
+        ▼
+Логиты:
+shape: [batch_size, seq_len, vocab_size]
+пример: [3, 24, 260]
+логиты = output @ W_out + b_out
+W_out: [dk, vocab_size]  (64 × 260)
+b_out: [vocab_size]       (260)
+        │
+        ▼
+┌───────────────────────────┐
+│         Softmax           │
+└───────────────────────────┘
+        │ вероятности
+        ▼
+Probabilities:
+shape: [batch_size, seq_len, vocab_size]
+пример: [3, 24, 260]
+каждый вектор вдоль последнего измерения → вероятности для каждого токена словаря
+каждый вектор вдоль последнего измерения -
+(batch 0:
+seq 0 → vector длиной vocab_size → softmax → probabilities(вероятность)
+seq 1 → vector длиной vocab_size → softmax → probabilities
+...
+seq 23 → vector длиной vocab_size → softmax → probabilities)
+        │
+        ▼
+┌───────────────────────────┐
+│       Tokenizer           │
+│  (обратное преобразование │
+│   индексов в символы)     │
+└───────────────────────────┘
+        │
+        ▼
+Output tokens / символы
+["hello world", "привет мир", ...]
+
+    */
 };
