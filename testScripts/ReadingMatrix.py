@@ -64,6 +64,33 @@ else:
             print("Wq (первые 5x5 элементов):\n", Wq[:5, :5])
             print("\nWk (первые 5x5 элементов):\n", Wk[:5, :5])
             print("\nWv (первые 5x5 элементов):\n", Wv[:5, :5])
+            output_file = "/mnt/storage/product/ml-lab/baseModel/output_layer.pt"
+
+            if not os.path.exists(output_file):
+                print(f"[ERROR] Файл {output_file} не найден!")
+            else:
+                try:
+                    with open(output_file, "rb") as f:
+                        # Читаем заголовок
+                        vocab_size = int(np.frombuffer(f.read(4), dtype=np.int32)[0])
+                        dk = int(np.frombuffer(f.read(4), dtype=np.int32)[0])
+                        print(f"[INFO] Заголовок output_layer.pt: vocab_size={vocab_size}, dk={dk}")
+
+                        # Считаем количество элементов
+                        W_size = vocab_size * dk
+                        b_size = vocab_size
+
+                        # Читаем W_out
+                        W_out = np.frombuffer(f.read(W_size * 4), dtype=np.float32).reshape(vocab_size, dk)
+                        # Читаем b_out
+                        b_out = np.frombuffer(f.read(b_size * 4), dtype=np.float32)
+
+                        print(f"[INFO] W_out (первые 5x5 элементов):\n{W_out[:5, :5]}")
+                        print(f"[INFO] b_out (первые 10 элементов): {b_out[:10]}")
+
+                except Exception as e:
+                    print(f"[ERROR] Ошибка при чтении output_layer.pt: {e}")
 
     except Exception as e:
         print(f"[ERROR] Ошибка при чтении weights.pt: {e}")
+

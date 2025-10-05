@@ -4,6 +4,7 @@
 #include "../Generation/Tensor.hpp"
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/Embedding.hpp"
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/WeightGenerator.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Model/LineLayer.hpp"
 Runner::Runner(int embedding_dim, int dk)
     : embedding_dim(embedding_dim), dk(dk), transformer(embedding_dim, dk), batchGen(embedding_dim) {}
 
@@ -86,6 +87,9 @@ std::cout << "Output shape: ["
           << output.shape[0] << " "
           << output.shape[1] << " "
           << output.shape[2] << "]\n";
+LineLayer linePosition;
+linePosition.initialize(128, 64);
+linePosition.initialize_or_load("output_layer.pt");
 
 //TODO - конец дебаг строк!
 
