@@ -63,7 +63,7 @@ class LineLayer
 
             std::cout << "Файл с весами загружен: " << filename << std::endl;
         } else {
-            // Xavier инициализация
+            // Инициализация матриц по Xavier
             float stddev = std::sqrt(2.0f / (dk + vocab_size));
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -72,20 +72,31 @@ class LineLayer
             for (auto &w : W_out) w = dist(gen);
             for (auto &b : b_out) b = dist(gen);
 
-            std::ofstream out(filename, std::ios::binary);
-            if (!out) {
-                std::cerr << "Не удалось создать файл для записи: " << filename << std::endl;
-                return;
-            }
 
-            out.write(reinterpret_cast<char*>(&vocab_size), sizeof(int));
-            out.write(reinterpret_cast<char*>(&dk), sizeof(int));
-            out.write(reinterpret_cast<char*>(W_out.data()), W_out.size() * sizeof(float));
-            out.write(reinterpret_cast<char*>(b_out.data()), b_out.size() * sizeof(float));
-            out.close();
+            save(filename);
 
-            std::cout << "Файл с весами создан: " << filename << std::endl;
+            std::cout << "Файл с весами создан и сохранён: " << filename << std::endl;
         }
+    }
+
+    // Сохраняем текущие матрицы в файл с заголовком
+    void save(const std::string& filename) {
+        std::ofstream out(filename, std::ios::binary);
+        if (!out) {
+            std::cerr << "Не удалось создать файл для записи: " << filename << std::endl;
+            return;
+        }
+
+        // Сначала заголовок: размеры матриц
+        out.write(reinterpret_cast<char*>(&vocab_size), sizeof(int));
+        out.write(reinterpret_cast<char*>(&dk), sizeof(int));
+
+        // Потом сами данные
+        out.write(reinterpret_cast<char*>(W_out.data()), W_out.size() * sizeof(float));
+        out.write(reinterpret_cast<char*>(b_out.data()), b_out.size() * sizeof(float));
+
+        out.close();
+        std::cout << "Файл с весами сохранён: " << filename << std::endl;
     }
         void initialize(int vocab_size_, int dk_) {
         vocab_size = vocab_size_;
