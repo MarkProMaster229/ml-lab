@@ -76,25 +76,46 @@ Mask shape: [3 32 32]
 квадратная матрица 32X32
 
 */
+
+/*
+07.10.2025
+linePosition.initialize(128, 64); - постоянные парамеры embedding_dim и dk
+
+итог Transformer output dk: 64, LineLayer dk: 64
+
+норма
+Final input shape: [3 24 128]
+Mask shape: [3 24 24]
+X shape: [3 24 128]
+
+
+*/
 Transformer transformer(embedding_dim, dk);
 transformer.load_weights("weights.pt");
 
 // Пропускаем через голову внимания
-// Пропускаем через голову внимания
 Tensor output = transformer.forward(final_input);
 
-// Дебаг формы output
-std::cout << "Output shape (перед линейным слоем): ["
-          << output.shape[0] << " "
-          << output.shape[1] << " "
-          << output.shape[2] << "]\n";
+//линейный слой
 LineLayer linePosition;
-linePosition.initialize(128, 64);                 // размеры должны совпадать с dk трансформера
-linePosition.initialize_or_load("output_layer.pt"); // создаст файл, если его нет
+linePosition.initialize(Tokenizer::SIZE, dk);  // vocab_size = размер словаря (например, 260), dk = 128
+linePosition.initialize_or_load("output_layer.pt");
+
+// Получаем вероятности
+Tensor probs;
+linePosition.liner(output, probs, "output_layer.pt");
+
+// Проверяем форму
+std::cout << "Probs shape: ["
+          << probs.shape[0] << " "
+          << probs.shape[1] << " "
+          << probs.shape[2] << "]\n";
+
 
 // Проверяем, что dk совпадает с ожидаемым
 std::cout << "Transformer output dk: " << output.shape[2]
-          << ", LineLayer dk: " << 64 << "\n"; // если у тебя linePosition.initialize(128, 64)
+          << ", LineLayer dk: " << dk << "\n";
+
 
 //TODO - конец дебаг строк!
 
