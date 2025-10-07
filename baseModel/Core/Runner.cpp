@@ -117,6 +117,36 @@ std::cout << "Transformer output dk: " << output.shape[2]
           << ", LineLayer dk: " << dk << "\n";
 
 
+//тест прямого прохода
+
+          // создаём генератор батчей и токенизатор
+BatchGenerator batchGen(embedding_dim);
+Tokenizer tokenizer;
+
+// исходный текст
+std::string input_text = "при";
+
+// количество шагов генерации
+int steps = 10;
+
+// вызов функции генерации
+std::string generated_text = transformer_generate(transformer, linePosition, batchGen, tokenizer, input_text, steps);
+
+// вывод результата
+std::cout << "Generated text: " << generated_text << std::endl;
+
+
+std::ofstream fout("output.txt");
+fout << generated_text;
+fout.close();
+
+
+
+
+// конец теста прямого прохода
+
+
+
 //TODO - конец дебаг строк!
 
 }

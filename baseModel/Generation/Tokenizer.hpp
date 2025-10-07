@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <vector>
 #include <string>
@@ -51,5 +52,16 @@ class Tokenizer
             cout << endl;
             return token;
         }
+
+        std::string idToChar(int id) {
+    if (id == PAD) return "[PAD]";
+    if (id == BOS) return "[BOS]";
+    if (id == EOS) return "[EOS]";
+    if (id == UNK) return "[UNK]";
+    if (id >= 0 && id < 256)
+        return std::string(1, static_cast<char>(id));
+    return "?";
+}
+
 
 };

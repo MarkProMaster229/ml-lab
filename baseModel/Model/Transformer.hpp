@@ -4,8 +4,11 @@
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/Position.hpp"
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/MaskGenerator.hpp"
 #include "/mnt/storage/product/ml-lab/baseModel/Generation/Embedding.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Model/LineLayer.hpp"
+#include "/mnt/storage/product/ml-lab/baseModel/Core/BatchGenerator.hpp"
 
 #include "AttentionLogits.hpp"
+
 
 Tensor matmul(const Tensor& A, const Tensor& B_transposed);
 Tensor transpose(const Tensor& X);
@@ -24,3 +27,7 @@ private:
     int dk;
     Logit::AttentionWeights weights;
 };
+
+std::string transformer_generate(Transformer& transformer, LineLayer& line,
+                                 BatchGenerator& batchGen, Tokenizer& tokenizer,
+                                 const std::string& input, int steps);

@@ -140,3 +140,52 @@ Tensor softmax(const Tensor& X) {
 
     return result;
 }
+// собираем все вместе тут
+/*
+смотри - std::string result = input; самая важная строка - по ней строим все предложение
+
+
+
+*/
+std::string transformer_generate(Transformer& transformer, LineLayer& line,
+                                 BatchGenerator& batchGen, Tokenizer& tokenizer,
+                                 const std::string& input, int steps) {
+    std::string result = input;// самая важная строка - по ней строим все предложение
+    for (int t = 0; t < steps; ++t) {// тут идем пока что до steps пока не до EOS по причине того что модель не учится
+        std::vector<int> tokens = tokenizer.myTokinezer(result);// взять строку result и превратить в вектор id токенов
+        /*
+        пример -
+        result = "при"
+        tokens = [BOS, <id п>, <id р>, <id и>, EOS]
+        */
+        Tensor X = batchGen.createInputTensor({tokens});//просто превратить токены в тензор
+        Tensor output = transformer.forward(X);//прямой проход трансформера
+
+        Tensor probs;
+        line.liner(output, probs, "output_layer.pt");// берем мой liner что бы превратить выход трансформера
+        // результат из softmax на этом этапе подается в линер
+
+        //жадный механизм(argmax) выборки токена - берем только самый вероятный токен -
+        int last_idx = probs.shape[1] - 1;
+        float max_val = -1e9;
+        int max_idx = 0;
+        for (int j = 0; j < probs.shape[2]; ++j) {
+            float val = probs.at(0, last_idx, j);
+            if (val > max_val) {
+                max_val = val;
+                max_idx = j;
+            }
+        }
+
+        result += tokenizer.idToChar(max_idx);
+    }
+    return result;
+}
+
+std::string decode_batch(const std::vector<int>& tokens, Tokenizer& tokenizer) {
+    std::string result;
+    for (int id : tokens) {
+        result += tokenizer.idToChar(id);
+    }
+    return result;
+}
