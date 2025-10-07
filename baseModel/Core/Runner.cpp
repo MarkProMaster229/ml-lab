@@ -80,16 +80,21 @@ Transformer transformer(embedding_dim, dk);
 transformer.load_weights("weights.pt");
 
 // Пропускаем через голову внимания
+// Пропускаем через голову внимания
 Tensor output = transformer.forward(final_input);
 
 // Дебаг формы output
-std::cout << "Output shape: ["
+std::cout << "Output shape (перед линейным слоем): ["
           << output.shape[0] << " "
           << output.shape[1] << " "
           << output.shape[2] << "]\n";
 LineLayer linePosition;
-linePosition.initialize(128, 64);
-linePosition.initialize_or_load("output_layer.pt");
+linePosition.initialize(128, 64);                 // размеры должны совпадать с dk трансформера
+linePosition.initialize_or_load("output_layer.pt"); // создаст файл, если его нет
+
+// Проверяем, что dk совпадает с ожидаемым
+std::cout << "Transformer output dk: " << output.shape[2]
+          << ", LineLayer dk: " << 64 << "\n"; // если у тебя linePosition.initialize(128, 64)
 
 //TODO - конец дебаг строк!
 

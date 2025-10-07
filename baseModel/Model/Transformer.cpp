@@ -73,25 +73,28 @@ Tensor Transformer::forward(Tensor& X) {
 
 // Вспомогательные функции - для транспонирования матриц - я  хз как оно работает было украдено в chatGPT, а все что ниже подчистую)))
 // да и по*уй))) -  weights: embedding_dim=128, dk=64, Wq.size=8192, Wk.size=8192, Wv.size=8192 матрица прямоугольная(128 x 64) и отлично все что можно было - теперь корректно.
-Tensor matmul(const Tensor& A, const Tensor& B_transposed) {
+Tensor matmul(const Tensor& A, const Tensor& B) {
     int batch = A.shape[0];
-    int seq_len = A.shape[1];
-    int dk = A.shape[2]; // Q/K dimension
+    int M = A.shape[1];
+    int K = A.shape[2];
+    int N = B.shape[2];
 
-    Tensor result(batch, seq_len, seq_len);
-
+    // Проверка совместимости размерностей
+    if (B.shape[1] != K) {
+        throw std::runtime_error("matmul: несовпадение размерностей последней оси A и второй оси B");
+    }
+    Tensor result(batch, M, N);
     for (int b = 0; b < batch; ++b) {
-        for (int i = 0; i < seq_len; ++i) {
-            for (int j = 0; j < seq_len; ++j) {
+        for (int i = 0; i < M; ++i) {
+            for (int j = 0; j < N; ++j) {
                 float sum = 0.0f;
-                for (int k = 0; k < dk; ++k) {
-                    sum += A.at(b, i, k) * B_transposed.at(b, k, j);
+                for (int k = 0; k < K; ++k) {
+                    sum += A.at(b, i, k) * B.at(b, k, j);
                 }
                 result.at(b, i, j) = sum;
             }
         }
     }
-
     return result;
 }
 

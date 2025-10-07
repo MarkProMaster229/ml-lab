@@ -167,4 +167,59 @@ Output tokens / символы
 ["hello world", "привет мир", ...]
 
     */
+   void liner(const Tensor& transformer_output, Tensor& out_probs, const std::string& weight_file = "output_layer.pt") {
+    int batch_size = transformer_output.shape[0];
+    int seq_len    = transformer_output.shape[1];
+    int dk         = transformer_output.shape[2];
+    int vocab_size = Tokenizer::SIZE;
+
+    // Загружаем веса и bias из файла
+    std::vector<float> W_out(vocab_size * dk);
+    std::vector<float> b_out(vocab_size);
+
+    std::ifstream in(weight_file, std::ios::binary);
+    if (!in) {
+        throw std::runtime_error("Не удалось открыть файл с весами: " + weight_file);
+    }
+
+    int file_vocab = 0, file_dk = 0;
+    in.read(reinterpret_cast<char*>(&file_vocab), sizeof(int));
+    in.read(reinterpret_cast<char*>(&file_dk), sizeof(int));
+
+
+    if (file_vocab != vocab_size || file_dk != dk) {
+        in.close();
+        throw std::runtime_error("Размерности в файле не совпадают с transformer_output и словарем");
+    }
+
+    in.read(reinterpret_cast<char*>(W_out.data()), W_out.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(b_out.data()), b_out.size() * sizeof(float));
+    in.close();
+
+    // создаём Tensor под вероятности
+    out_probs = Tensor(batch_size, seq_len, vocab_size);
+
+    for (int i = 0; i < batch_size; i++) {
+        for (int j = 0; j < seq_len; j++) {
+            std::vector<float> logits(vocab_size, 0.0f);
+            for (int v = 0; v < vocab_size; v++) {
+                for (int k = 0; k < dk; k++)
+                    logits[v] += transformer_output.at(i, j, k) * W_out[v * dk + k];
+                logits[v] += b_out[v];
+            }
+
+            // softmax
+            float max_logit = *std::max_element(logits.begin(), logits.end());
+            float sum_exp = 0.0f;
+            for (auto& x : logits) x = std::exp(x - max_logit), sum_exp += x;
+            for (int v = 0; v < vocab_size; v++) logits[v] /= sum_exp;
+
+            // записываем в out_probs
+            for (int v = 0; v < vocab_size; v++)
+                out_probs.at(i, j, v) = logits[v];
+        }
+    }
+}
+
+
 };
