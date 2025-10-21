@@ -2,9 +2,9 @@
 
 #include "../Generation/Position.hpp"
 #include "../Generation/Tensor.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Generation/Embedding.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Generation/WeightGenerator.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Model/LineLayer.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Generation/Embedding.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Generation/WeightGenerator.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Model/LineLayer.hpp"
 Runner::Runner(int embedding_dim, int dk)
     : embedding_dim(embedding_dim), dk(dk), transformer(embedding_dim, dk), batchGen(embedding_dim) {}
 

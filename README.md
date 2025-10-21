@@ -9,9 +9,10 @@
 Перейди в директорию проекта и соберите программу:
 
 ```bash
-cd /mnt/storage/product/ml-lab/baseModel  # свой путь
+cd /home/chelovek/Документы/work/ml-lab/baseModel #cвой путь
 
-g++ -std=c++17 -g -IGeneration -IModel -ICore \
+g++ -std=c++17 -g \
+    -ICore -IGeneration -IModel \
     Core/main.cpp Core/Runner.cpp Core/BatchGenerator.cpp \
     Model/Transformer.cpp Model/AttentionLogits.cpp \
     -o Core/main.out

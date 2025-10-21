@@ -1,11 +1,11 @@
 #pragma once
 
-#include "/mnt/storage/product/ml-lab/baseModel/Generation/Tensor.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Generation/Position.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Generation/MaskGenerator.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Generation/Embedding.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Model/LineLayer.hpp"
-#include "/mnt/storage/product/ml-lab/baseModel/Core/BatchGenerator.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Generation/Tensor.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Generation/Position.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Generation/MaskGenerator.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Generation/Embedding.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Model/LineLayer.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/Core/BatchGenerator.hpp"
 
 #include "AttentionLogits.hpp"
 

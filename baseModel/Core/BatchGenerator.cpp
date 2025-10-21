@@ -1,4 +1,4 @@
-#include "BatchGenerator.hpp"          // Объявление класса
+#include "BatchGenerator.hpp"
 #include "../Generation/Position.hpp"
 #include "../Generation/Tensor.hpp"
 #include "../Generation/MaskGenerator.hpp"

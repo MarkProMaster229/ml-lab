@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include "/mnt/storage/product/ml-lab/baseModel/json.hpp"
+#include "/home/chelovek/Документы/work/ml-lab/baseModel/json.hpp"
 #include "Tokenizer.hpp"
 
 using json = nlohmann::json;
