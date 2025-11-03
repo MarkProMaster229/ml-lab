@@ -103,4 +103,8 @@ public:
         file.read(reinterpret_cast<char*>(data.data()), total * sizeof(float));
         file.close();
     }
+    //просто вернуть общее кол-во эелементв тензора нужно для SDP
+        size_t size() const {
+        return data.size();
+    }
 };

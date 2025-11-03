@@ -71,6 +71,7 @@ Tensor Transformer::forward(Tensor& X) {
     return output;
 }
 
+
 // Вспомогательные функции - для транспонирования матриц - я  хз как оно работает было украдено в chatGPT, а все что ниже подчистую)))
 // да и по*уй))) -  weights: embedding_dim=128, dk=64, Wq.size=8192, Wk.size=8192, Wv.size=8192 матрица прямоугольная(128 x 64) и отлично все что можно было - теперь корректно.
 Tensor matmul(const Tensor& A, const Tensor& B) {
