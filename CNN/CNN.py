@@ -41,3 +41,46 @@ class CNN(nn.Module):
         
         #выходной слой 
         self.fc2 = nn.Linear(64, 26)
+        
+    def forward(self, x):
+        #делает 16 карт признаков:
+        x = F.relu(self.conv1(x))
+        #Делит картинку на 2
+        x = F.max_pool2d(x,2)
+        #сеть получает уменьшенную картинку
+        x = F.relu(self.conv2(x))
+        #снова размер делится на 2
+        x = F.max_pool2d(x, 2)
+        
+        #print(x.shape)
+        
+        #Выравнивание
+        x = x.view(x.size(0), -1)
+        #далее подать в полносвязный слой
+        x = F.relu(self.fc1(x))
+            
+        #выходной слой 
+        x = self.fc2(x)
+        return x
+        
+    #даталоудеры
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=500, shuffle=True)
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=500, shuffle=False)
+    
+model = CNN()
+    
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
+    
+for epoch in range(3):
+    for images, labels in train_loader:
+        labels = labels - 1
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs,labels)
+        loss.backward()
+        #print(model.conv1.weight.grad.shape)
+        #print(model.conv1.weight.grad) 
+        optimizer.step()
+        
+    print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
