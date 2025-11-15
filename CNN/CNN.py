@@ -71,8 +71,12 @@ model = CNN()
     
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
-    
-for epoch in range(3):
+
+train_losses = []
+
+
+for epoch in range(30):
+    running_loss = 0
     for images, labels in train_loader:
         labels = labels - 1
         optimizer.zero_grad()
@@ -82,5 +86,28 @@ for epoch in range(3):
         #print(model.conv1.weight.grad.shape)
         #print(model.conv1.weight.grad) 
         optimizer.step()
-        
-    print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
+        running_loss += loss.item()
+
+
+    
+    epoch_loss = running_loss / len(train_loader)
+    train_losses.append(epoch_loss)
+    print(f"Epoch {epoch+1}, Loss: {epoch_loss:.4f}")
+from safetensors.torch import save_file
+save_file(model.state_dict(), "cnn_letters.safetensors")
+
+import matplotlib.pyplot as plt
+plt.plot(range(1, len(train_losses)+1), train_losses, marker='o')
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("Training Loss over Epochs")
+plt.grid(True)
+plt.savefig("training_loss30.png")
+
+
+#dowload my parametrs(models)
+#from safetensors.torch import load_file
+
+#weights_dict = load_file("cnn_letters.safetensors")
+#model = CNN()  # create new model
+#model.load_state_dict(weights_dict)  # upload parametrs
