@@ -2,3 +2,5 @@ baseModel/json.hpp
 baseModel/main
 baseModel/Core/main.out
 baseModel/output.txt
+CNN/dowload.py
+CNN/q.py
