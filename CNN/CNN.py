@@ -1,3 +1,4 @@
+#данное архитектурно решение - Accuracy: 25/26 = 96.15%
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 import torch
@@ -10,7 +11,7 @@ import os
 SAVE_DIR = "saved_images"
 os.makedirs(SAVE_DIR, exist_ok=True)
 #delete
-
+torch.set_num_threads(20)
 
 
 transform = transforms.Compose([
@@ -115,20 +116,28 @@ class CNN(nn.Module):
         #сеть - может комбинировать простые паттерны в сложные формы
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
+        
+        self.conv5 = nn.Conv2d(512, 1024, kernel_size=3, padding=1)
+        #БАМ! не ожидали?
+        #self.pool = nn.AdaptiveAvgPool2d((8,8))
+        
         #Flatten + Linear — полносвязный слой
         #view превращает 3D-тензор (32×7×7) в 1D вектор
         #forward x = x.view(x.size(0), -1)
         #Linear — обычный нейронный слой: каждый вход соединяется со всеми 64 нейронами.
-        self.fc1 = nn.Linear(128*16*16, 64)
-
-        
+        self.fc1 = nn.Linear(1024*8*8, 512)
+        #self.dropout1 = nn.Dropout(p=0.5)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 128)
         #выходной слой 
-        self.fc2 = nn.Linear(64, 26)
+        self.fc4 = nn.Linear(128, 26)
         
     def forward(self, x):
         #делает 16 карт признаков:
         x = F.relu(self.conv1(x))
-        print(x.shape)
         #Делит картинку на 2
         x = F.max_pool2d(x,2)
         #сеть получает уменьшенную картинку
@@ -136,15 +145,27 @@ class CNN(nn.Module):
         #снова размер делится на 2
         x = F.max_pool2d(x, 2)
         
+        x = F.relu(self.conv3(x))
+        x = F.max_pool2d(x, 2)
+        
+        x = F.relu(self.conv4(x))
+        
+        x = F.relu(self.conv5(x))
+        #воооооот!
+        #x = self.pool(x)
+        
         #print(x.shape)
         
         #Выравнивание
         x = x.view(x.size(0), -1)
         #далее подать в полносвязный слой
         x = F.relu(self.fc1(x))
+        #x = self.dropout1(x)
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
             
         #выходной слой 
-        x = self.fc2(x)
+        x = self.fc4(x)
         return x
         
     #даталоудеры
@@ -154,25 +175,25 @@ train_loader = torch.utils.data.DataLoader(
 test_loader = torch.utils.data.DataLoader(
     test_dataset, batch_size=160, shuffle=False, collate_fn=collate_fn
 )
-model = CNN()
-    
+train_losses = []
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
+model = CNN().to(device)
+
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.003)#???
 
-train_losses = []
-
-
-for epoch in range(25):
+for epoch in range(35):
     running_loss = 0
     for batch in train_loader:
-        images = batch["image"]
-        labels = batch["label"]
+        images = batch["image"].to(device)
+        labels = batch["label"].to(device)
+
         optimizer.zero_grad()
         outputs = model(images)
         loss = criterion(outputs, labels)
         loss.backward()
-        # print(model.conv1.weight.grad.shape)
-        # print(model.conv1.weight.grad) 
         optimizer.step()
         running_loss += loss.item()
 
