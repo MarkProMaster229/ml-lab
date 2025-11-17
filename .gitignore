@@ -4,3 +4,5 @@ baseModel/Core/main.out
 baseModel/output.txt
 CNN/dowload.py
 CNN/q.py
+CNN/experiment1/dowload.py
+CNN/experiment1/q.py
