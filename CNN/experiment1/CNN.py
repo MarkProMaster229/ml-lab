@@ -1,4 +1,6 @@
 #данное архитектурно решение - Accuracy: 25/26 = 96.15%
+#torch.Size([160, 1024, 8, 8])
+#Train size: 40922, Test size: 10246
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 import torch

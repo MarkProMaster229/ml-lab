@@ -6,3 +6,4 @@ CNN/dowload.py
 CNN/q.py
 CNN/experiment1/dowload.py
 CNN/experiment1/q.py
+CNN/experiment2/cnn_lettersNew.safetensors
