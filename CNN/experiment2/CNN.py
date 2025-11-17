@@ -1,6 +1,9 @@
 #torch.Size([360, 256, 16, 16])
 #Train size: 40922, Test size: 10246
 #Accuracy: 20/26 = 76.92%
+# NOTE [2025-11-17]: Низкая сходимость, но вес модели ~33.4 МБ
+# HYPOTHESIS: self.pool = nn.AdaptiveAvgPool2d((16,16)) режет локальные признаки слишком сильно
+# нет смысла увеличивать размеры nn.AdaptiveAvgPool2d((x,x) 
 
 import os
 import torch
@@ -87,7 +90,10 @@ class CNN(nn.Module):
         self.conv1 = nn.Conv2d(1,64,kernel_size=3,padding=1)
         self.conv2 = nn.Conv2d(64,128,kernel_size=3,padding=1)
         self.conv3 = nn.Conv2d(128, 256,kernel_size=3,padding=1)
-        self.pool = nn.AdaptiveAvgPool2d((16,16))
+        #без слоя пуллинга результат Accuracy: 21/26 = 80.77%
+        #размер - ~33,4 мб(почему ? по сути слоя нет размер должен был уменьшиться)
+        #self.pool = nn.AdaptiveAvgPool2d((16,16))
+        #TODO flatten = корень из выходого сверточного слоя
         self.fc1 = nn.Linear(256*16*16, 128)
         self.fc2 = nn.Linear(128, 64)
         self.fc3 = nn.Linear(64, 26)
@@ -99,7 +105,7 @@ class CNN(nn.Module):
         x = F.max_pool2d(x,4)
         x = F.relu(self.conv3(x))
         #print(x.shape)
-        x = self.pool(x)
+        #x = self.pool(x)
         x = x.view(x.size(0), -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
@@ -120,7 +126,7 @@ model = CNN().to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
-
+# TODO локальный минимум достигается на ~25 эпохе
 for epoch in range(35):
     running_loss = 0
     for batch in train_loader:

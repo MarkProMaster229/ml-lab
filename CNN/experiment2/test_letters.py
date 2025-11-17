@@ -33,7 +33,7 @@ class CNN(nn.Module):
     
 
 model = CNN()
-weights = load_file("/home/chelovek/Документы/work/ml-lab/CNN/experiment2/cnn_lettersNew.safetensors")
+weights = load_file("/home/chelovek/Загрузки/cnn_lettersNew.safetensors")
 model.load_state_dict(weights)
 model.eval()
 
