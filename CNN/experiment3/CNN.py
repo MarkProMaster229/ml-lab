@@ -1,8 +1,9 @@
 #работает на основе experiment2
 #задача - увеличить сходимость, сохраняя малый размер модели
 #может попробывать для задачи классификации 26 букв делать не огромное кол - во слоев?
-#модель весом в 6 мб имеет точность Accuracy: 22/26 = 84.62% ! 
-
+#модель весом в 2 мб имеет точность Accuracy: 23/26 = 88.46% 
+#думаю в реальном примере не стоит так сильно ужимать макс пулом, да на маленьком тестовом датасете я выигрываю
+#но на грязном наборе сходимость будет минимальна
 import os
 import torch
 import torch.nn as nn
@@ -81,7 +82,6 @@ test_dataset = [ex for ex in test_dataset if transform_fn(ex) is not None]
 
 print(f"Train size: {len(train_dataset)}, Test size: {len(test_dataset)}")
 
-
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
@@ -96,14 +96,15 @@ class CNN(nn.Module):
     def forward(self, x):
         x = F.relu(self.conv1(x))#64 
         x = F.relu(self.conv2(x))#32
-        x = F.max_pool2d(x,2)#16
+        x = F.max_pool2d(x,8)#16
         x = F.relu(self.conv3(x))#16
-        
+        print(x.shape)
         x = x.view(x.size(0), -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+    
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=360, shuffle=True, collate_fn=collate_fn
 )
