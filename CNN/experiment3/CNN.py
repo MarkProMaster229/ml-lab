@@ -1,6 +1,8 @@
 #работает на основе experiment2
 #задача - увеличить сходимость, сохраняя малый размер модели
 #может попробывать для задачи классификации 26 букв делать не огромное кол - во слоев?
+#модель весом в 6 мб имеет точность Accuracy: 22/26 = 84.62% ! 
+
 import os
 import torch
 import torch.nn as nn
@@ -83,32 +85,25 @@ print(f"Train size: {len(train_dataset)}, Test size: {len(test_dataset)}")
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1,64,kernel_size=3,padding=1)
-        self.conv2 = nn.Conv2d(64,128,kernel_size=3,padding=1)
-        self.conv3 = nn.Conv2d(128, 256,kernel_size=3,padding=1)
-        #без слоя пуллинга результат Accuracy: 21/26 = 80.77%
-        #размер - ~33,4 мб(почему ? по сути слоя нет размер должен был уменьшиться)
-        #внутри слоя пуллинга нет параметров!! пулинг изменит кол-во активаций!
-        #self.pool = nn.AdaptiveAvgPool2d((16,16))
-        #TODO flatten = корень из выходого сверточного слоя
-        self.fc1 = nn.Linear(256*16*16, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 26)
+        self.conv1 = nn.Conv2d(1,32, kernel_size=2,padding=1)
+        self.conv2 = nn.Conv2d(32,64, kernel_size=4,padding=1)
+        self.conv3 = nn.Conv2d(64,128, kernel_size=6,padding=1)
         
+        self.fc1 = nn.Linear(128*29*29,64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, 26)
         
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x,4)
-        x = F.relu(self.conv3(x))
-        #print(x.shape)
-        #x = self.pool(x)
+        x = F.relu(self.conv1(x))#64 
+        x = F.relu(self.conv2(x))#32
+        x = F.max_pool2d(x,2)#16
+        x = F.relu(self.conv3(x))#16
+        
         x = x.view(x.size(0), -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-    
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=360, shuffle=True, collate_fn=collate_fn
 )
