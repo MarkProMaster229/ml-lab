@@ -9,3 +9,4 @@ CNN/experiment1/q.py
 CNN/experiment2/cnn_lettersNew.safetensors
 target/
 **/*.rs.bk
+exp/tensor/tensor_module.cpython-313-x86_64-linux-gnu.so
