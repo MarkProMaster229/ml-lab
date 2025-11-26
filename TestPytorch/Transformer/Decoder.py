@@ -6,9 +6,22 @@ from torchvision import transforms
 
 class Transformer(nn.Module):
     
-    def __init__(self):
-        super(Transformer, self).__init__()
-    
+    def __init__(self, vocabSize=1000, sizeVector=256, maxLong=100):
+        super().__init__()
+        self.sizeVector = sizeVector
+        
+        self.Vectorization = nn.Embedding(vocabSize, sizeVector)
+        self.posEmbed = nn.Embedding(maxLong, sizeVector)
+        
+        self.ln1 = nn.LayerNorm(sizeVector)
+        self.attn = nn.MultiheadAttention(sizeVector, 8, batch_first=True)
+        self.ln2 = nn.LayerNorm(sizeVector)
+        
+        self.ff = nn.Sequential(
+            nn.Linear(sizeVector, sizeVector*4),
+            nn.GELU(),
+            nn.Linear(sizeVector*4, sizeVector)
+        )
     
     def inpute(self):
         batchSize = 2
@@ -30,3 +43,5 @@ class Transformer(nn.Module):
         
         mask = torch.triu(torch.ones(seqLen, seqLen) * float('-inf'), diagonal=1)
         
+        def forward(self, input_ids):
+            
