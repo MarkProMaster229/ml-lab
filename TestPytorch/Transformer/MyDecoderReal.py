@@ -37,7 +37,7 @@ class TransformerBlock(nn.Module):
 
         return x
 class TransformerMy(nn.Module):
-    def __init__(self, vocabSize=1000,maxLong=100,sizeVector=256, num_layers=6):
+    def __init__(self, vocabSize=120000,maxLong=100,sizeVector=256, num_layers=1):
         super().__init__()
         self.Vectorization = nn.Embedding(vocabSize, sizeVector)
         self.posEmbed = nn.Embedding(maxLong, sizeVector)
@@ -45,6 +45,7 @@ class TransformerMy(nn.Module):
             TransformerBlock(sizeVector=sizeVector, num_heads=8)
             for _ in range(num_layers)
             ])
+        
         self.lm_head = nn.Linear(sizeVector, vocabSize)
         
 
@@ -65,35 +66,49 @@ class TransformerMy(nn.Module):
 
         return self.lm_head(h)
     
-class BigTransformer(nn.Module):
-    def __init__(self, vocabSize=1000, sizeVector=256, num_layers=6, n_models=10):
-        super().__init__()
-        self.model = TransformerMy(vocabSize=vocabSize,sizeVector=sizeVector,num_layers=num_layers)
-        self.blocks = nn.ModuleList([TransformerMy(vocabSize=vocabSize, sizeVector=sizeVector, num_layers=num_layers) 
-                                     for _ in range(n_models)])
+#class BigTransformer(nn.Module):
+#    def __init__(self, vocabSize=1000, sizeVector=256, num_layers=6, n_models=10):
+#        super().__init__()
+#        self.model = TransformerMy(vocabSize=vocabSize,sizeVector=sizeVector,num_layers=num_layers)
+#        self.blocks = nn.ModuleList([TransformerMy(vocabSize=vocabSize, sizeVector=sizeVector, num_layers=num_layers) 
+#                                     for _ in range(n_models)])
 
-    def forward(self, x):
-        h = x
-        for block in self.blocks:
-            h = block(h)
-        return h
+    #def forward(self, x):
+    #    h = x
+    #    for block in self.layers:#вот тут тоже странно! уточни! 
+    #        h = block(h)
+    #    return h
 class WorkModel():
     
-    def __init__(self,vocabSize=1000, sizeVector=256, num_layers=6, n_models=10):
-        self.vocabSize = vocabSize
+    def __init__(self,vocabSize=120000, sizeVector=256, num_layers=6, n_models=10):
+        self.tokenizator = TokenizerMy()
+        real_vocab_size = self.tokenizator.get_vocab_size() 
+        self.vocabSize = real_vocab_size
         self.sizeVector = sizeVector
-        self.numLauers = num_layers
+        self.numLayers = num_layers
         self.nModels = n_models
+        self.maxLong = 100
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = BigTransformer(
-            vocabSize=vocabSize,
+        #self.model = BigTransformer(
+        #    vocabSize=vocabSize,
+        #    sizeVector=sizeVector,
+        #    num_layers=num_layers,
+        #    n_models=n_models
+        #).to(self.device)
+        self.model = TransformerMy(
+            vocabSize=self.vocabSize,
+            maxLong=self.maxLong,
             sizeVector=sizeVector,
-            num_layers=num_layers,
-            n_models=n_models
+            num_layers=num_layers
         ).to(self.device)
 
+        # или через self.tokenizator.tokenizer.vocab_size
+        
+        print(f"Vocab size в модели: {vocabSize}")
+        print(f"Real vocab size: {real_vocab_size}")
+
         self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)
-        self.criterion = nn.CrossEntropyLoss()
+        self.critericon = nn.CrossEntropyLoss()
     
     def include(self):
         tokenizator = TokenizerMy()
@@ -119,13 +134,13 @@ class WorkModel():
                 outputs = self.model(inputINDX)
                 #верно ли я понимаю мы идем как бы назад но так то вперед потому что итеррируемся мы назад 
                 #типо предсказать следующий токен потому что мы как бы шли в лево и -1 чтоб сделать шаг в право хз 
-                shakeRight = outputs[:,:-1,:].contiguous()
+                shakeRight = outputs[:, :-1, :].contiguous()
                 #ну очевидно что первый токен мы типо не предсказываем хз
-                DONTtOUCHlEFT = labels[:,1:].contiguous()
+                DONTtOUCHlEFT = labels[:, 1:].contiguous() 
 
-                loss = self.criterion(
-                    shakeRight.view(-1,shakeRight(-1)),#встряхнуть
-                    shakeRight.view(-1)
+                loss = self.critericon(
+                    shakeRight.view(-1, shakeRight.size(-1)),#встряхнуть
+                    DONTtOUCHlEFT.view(-1)
                 )
                 loss.backward()
                 self.optimizer.step()

@@ -8,14 +8,16 @@ from datasets import load_dataset
 import torch
 from torch.utils.data import DataLoader
 
-tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
-ds = load_dataset("MarkProMaster229/synthetic_dataset")
 
 
 class TokenizerMy():
+    def __init__(self):
+        # Выносим инициализацию в __init__
+        self.tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
+        self.ds = load_dataset("MarkProMaster229/synthetic_dataset")
 
     def tokenize(self, examples):
-        result = tokenizer(
+        result = self.tokenizer(
         examples["target"],
         truncation=True,
         padding="max_length",
@@ -25,15 +27,19 @@ class TokenizerMy():
         #вот тут подробнее почему именно так ? 
         result["labels"] = result["input_ids"].clone()
         return result
+    
+    def get_vocab_size(self):
+        
+        return self.tokenizer.vocab_size
     def tokenizerOutout(self):
-        tokenizeOutput = ds.map(self.tokenize, batched=True, remove_columns=["input", "target"])
+        tokenizeOutput = self.ds.map(self.tokenize, batched=True, remove_columns=["input", "target"])
         tokenizeOutput = tokenizeOutput.with_format("torch", columns=["input_ids", "labels"])
         return tokenizeOutput
     
     def datalouder(self):
         trainLoader = DataLoader(
             self.tokenizerOutout()["train"],
-            batch_size=46,
+            batch_size=25,
             #попробуй без перемешивания потом
             shuffle=True,
         )
