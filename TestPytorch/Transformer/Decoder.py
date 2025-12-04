@@ -134,6 +134,31 @@ def create_synthetic_batch(batch_size, seq_len, vocab_size, device):
     targets[:, -1] = -100  # последний токен не имеет цели
     return inputs, targets
 
+from transformers import AutoTokenizer
+from torch.utils.data import Dataset, DataLoader
+from datasets import load_dataset
+# 1. Загружаем датасет
+print("Загрузка датасета...")
+dataset = load_dataset("MarkProMaster229/synthetic_dataset")
+print(f"Датасет загружен. Пример: {dataset['train'][0]}")
+
+# 2. Берем готовый русский токенизатор
+print("\nЗагрузка токенизатора...")
+tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
+
+# Добавляем специальные токены, если их нет
+special_tokens = {
+    'pad_token': '<pad>',
+    'sep_token': '<sep>',
+    'bos_token': '<bos>',
+    'eos_token': '<eos>'
+}
+tokenizer.add_special_tokens(special_tokens)
+
+print(f"Размер словаря: {tokenizer.vocab_size}")
+print(f"Пример токенизации: {tokenizer.tokenize('Привет, как дела?')}")
+
+
 # Функция для вычисления потерь
 def compute_loss(logits, targets, vocab_size):
     """Вычисляет кросс-энтропийную потерь"""

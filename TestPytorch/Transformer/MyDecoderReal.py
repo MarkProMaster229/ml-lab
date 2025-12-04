@@ -1,8 +1,10 @@
 import os
 import torch
+import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms
+from Tokenizer import TokenizerMy
 class TransformerBlock(nn.Module):
     def __init__(self, sizeVector=256, num_heads=8):
         super().__init__()
@@ -75,77 +77,60 @@ class BigTransformer(nn.Module):
         for block in self.blocks:
             h = block(h)
         return h
-from transformers import AutoTokenizer
-from datasets import load_dataset
-import torch
-from torch.utils.data import DataLoader
-
-TOKENIZER_NAME = "bert-base-uncased"
-tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_NAME)
-tokenized = tokenizer
-TOKENIZER_NAME = "bert-base-uncased"
-tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_NAME)
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token or '[PAD]'
-    tokenizer.pad_token_id = tokenizer.eos_token_id or 0
-ds = load_dataset("MarkProMaster229/synthetic_dataset")
-VOCAB_SIZE = tokenizer.vocab_size
-class LoopTraine(nn.Module):
-    def tokinizer2(examples):
-        MAX_LENGTH = 100#тут неизвестно!
-        print(f"Размер словаря: {VOCAB_SIZE}")
-        tokenized = tokenizer(
-            examples["text"],
-            #что это ? 
-            truncation=True,
-            #зачем нам паддинги 
-            padding="max_length",
-            #что это 
-            max_length=MAX_LENGTH,
-            #что это
-            return_tensors="pt"
-        )
-        #это что такое ?
-        tokenized["labels"] = tokenized["input_ids"].clone()
-
-        tokenized_dataset = ds.map(
-            tokenized,
-            batched=True,
-            remove_columns=["text"]  # удаляем оригинальный текст
-            )
-        tokenized_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
-        return tokenized_dataset
-        from torch.utils.data import DataLoader
-    def Dataloader(self):
-        BatchSize = 50
-        train_data = DataLoader(
-            tokenizer["train"],
-            #что это ?
-            shuffle=True,
-            batch_size=BatchSize,
-            drop_last=True 
-        )
-        #что это ? 
-        val_dataloader = DataLoader(
-            tokenizer["validation"],
-            batch_size=BatchSize,
-            drop_last=True
-            )   
-        
-model = BigTransformer(
-    vocabSize=VOCAB_SIZE,
-    sizeVector=256,
-    num_layers=6,
-    n_models=10 
-    )
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
-
-import torch.optim as optim
-from tqdm import tqdm  # для прогресс-бара
-
-
-def lern(self):
-    optimizer = optim.AdamW(model.parameters(), lr=1e-4)
-    criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
+class WorkModel():
     
+    def __init__(self,vocabSize=1000, sizeVector=256, num_layers=6, n_models=10):
+        self.vocabSize = vocabSize
+        self.sizeVector = sizeVector
+        self.numLauers = num_layers
+        self.nModels = n_models
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = BigTransformer(
+            vocabSize=vocabSize,
+            sizeVector=sizeVector,
+            num_layers=num_layers,
+            n_models=n_models
+        ).to(self.device)
+
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)
+        self.criterion = nn.CrossEntropyLoss()
+    
+    def include(self):
+        tokenizator = TokenizerMy()
+        datalouder = tokenizator.datalouder()
+
+        for batch in datalouder:
+            inputIds = batch['input_ids']
+            labels = batch['labels']
+        
+        num_epochs = 3
+        
+
+        for epoch in range(num_epochs):
+            print("эпоха{epox}")
+
+            self.model.train()
+
+            for batchINDX, batch in enumerate(datalouder):
+                inputINDX = batch['input_ids'].to(self.device)
+                labels = batch['labels'].to(self.device)
+
+                self.optimizer.zero_grad()
+                outputs = self.model(inputINDX)
+                #верно ли я понимаю мы идем как бы назад но так то вперед потому что итеррируемся мы назад 
+                #типо предсказать следующий токен потому что мы как бы шли в лево и -1 чтоб сделать шаг в право хз 
+                shakeRight = outputs[:,:-1,:].contiguous()
+                #ну очевидно что первый токен мы типо не предсказываем хз
+                DONTtOUCHlEFT = labels[:,1:].contiguous()
+
+                loss = self.criterion(
+                    shakeRight.view(-1,shakeRight(-1)),#встряхнуть
+                    shakeRight.view(-1)
+                )
+                loss.backward()
+                self.optimizer.step()
+                if batchINDX % 10 == 0:  # каждые 10 батчей
+                    print(f"  Batch {batchINDX}/{len(datalouder)} - Loss: {loss.item():.4f}")
+
+start = WorkModel()
+start.include()
