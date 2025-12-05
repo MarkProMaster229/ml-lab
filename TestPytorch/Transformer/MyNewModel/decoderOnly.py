@@ -41,8 +41,9 @@ class TransformerBlock(nn.Module):
         return x
 
 class TransformerRun(nn.Module):
-    def __init__(self, vocabSize = 120000, maxLong = 100, sizeVector = 512,block = 12):
+    def __init__(self, vocabSize = 120000, maxLong = 100, sizeVector = 512,block = 15):
         super().__init__()
+        self.maxLong = maxLong 
         self.Vectorization = nn.Embedding(vocabSize, sizeVector)
         self.posEmbed = nn.Embedding(maxLong, sizeVector)
         self.layers = nn.ModuleList([
