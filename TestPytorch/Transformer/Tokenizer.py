@@ -39,7 +39,7 @@ class TokenizerMy():
     def datalouder(self):
         trainLoader = DataLoader(
             self.tokenizerOutout()["train"],
-            batch_size=25,
+            batch_size=24,
             #попробуй без перемешивания потом
             shuffle=True,
         )

@@ -107,7 +107,7 @@ class WorkModel():
         print(f"Vocab size в модели: {vocabSize}")
         print(f"Real vocab size: {real_vocab_size}")
 
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)#1e-4
         self.critericon = nn.CrossEntropyLoss()
     
     def include(self):
