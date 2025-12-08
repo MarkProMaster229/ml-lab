@@ -135,7 +135,7 @@ for epoch in range(epochs):
     
     # Выводим лог: эпоха, средний loss и текущий LR
     current_lr = optimizer.param_groups[0]['lr']
-    print(f"[Эпоха {epoch+1}/{epochs}] Avg Loss: {avg_epoch_loss:.4f}, LR: {current_lr:.6f}")
+    print(f"Эпоха {epoch+1}/{epochs}] Avg Loss: {avg_epoch_loss:.4f}, LR: {current_lr:.6f}")
 
     # Сохраняем каждые 5 эпох
     if (epoch + 1) % save_every == 0:
@@ -145,7 +145,7 @@ for epoch in range(epochs):
         torch.save(optimizer.state_dict(), f"{epoch_save_path}/optimizer.pth")
         torch.save(config, f"{epoch_save_path}/config.pth")
         tokenizer.save_pretrained(epoch_save_path)
-        print(f"💾 Модель после {epoch+1} эпох сохранена в {epoch_save_path}")
+        print(f"done model {epoch+1} epoch saved {epoch_save_path}")
 
 # ----------------------------
 # 5. Сохраняем финальную модель
@@ -154,4 +154,4 @@ torch.save(model.state_dict(), f"{path}/model_weights.pth")
 torch.save(optimizer.state_dict(), f"{path}/optimizer.pth")
 torch.save(config, f"{path}/config.pth")
 tokenizer.save_pretrained(path)
-print(f"✅ Финальная модель сохранена в {path}")
+print(f"Финальная модель сохранена в {path}")

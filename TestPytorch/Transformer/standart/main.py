@@ -8,7 +8,7 @@ from tokenizer import TokenizerMy
 #ура! 100 вклад в репу! сделано довольно много работы с августа(сегодня 08.12.2025) 
 #круто что спустя несколько месяцев я вновь в трансформерах!
 class WorkModel():
-    def __init__(self, sizeVector = 64, num_layers=2, maxLong=200):
+    def __init__(self, sizeVector = 128, num_layers=2, maxLong=256):
         self.tokenizator = TokenizerMy()
         self.vocabSize = self.tokenizator.get_vocab_size()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -39,6 +39,9 @@ class WorkModel():
             print(f"эпоха{epoch}")
             self.model.train()
 
+            total_loss = 0.0
+            count_batches = 0
+
             if epoch % 10 == 0:
                 self.save_model(f"trained_model{epoch}")
 
@@ -57,8 +60,16 @@ class WorkModel():
                 )
                 loss.backward()
                 self.optimizer.step()
-                if batchINDX % 10 == 0:
-                    print(f"  Batch {batchINDX}/{len(datalouder)} - Loss: {loss.item():.4f}")
+
+                total_loss += loss.item()
+                count_batches += 1
+
+                #if batchINDX % 10 == 0:
+                #    print(f"  Batch {batchINDX}/{len(datalouder)} - Loss: {loss.item():.4f}")
+
+            avg_loss = total_loss / count_batches
+            print(f"Средний Loss за эпоху {epoch}: {avg_loss:.4f}")
+
 #------------------------------------------------------------------------------------------------
     def save_model(self, path="my_model"):
         import os

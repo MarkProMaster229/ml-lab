@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 
 class TransformerBlock(nn.Module):
-    def __init__(self, sizeVector = 64, numHeads = 2):
+    def __init__(self, sizeVector = 128, numHeads = 4):
         super().__init__()
         self.sizeVector = sizeVector
         self.ln1 = nn.LayerNorm(sizeVector)
@@ -21,6 +21,7 @@ class TransformerBlock(nn.Module):
     def forward(self, x, attMask = None):
         h = self.ln1(x)
         z, _ = self.attn(h, h, h, attn_mask=attMask)
+        x = x + z
 
         h = self.ln2(x)
         z1 = self.ff(h)
@@ -28,7 +29,7 @@ class TransformerBlock(nn.Module):
         return x 
     
 class TransformerRun(nn.Module):
-    def __init__(self, vocabSize = 120000, maxLong = 100, sizeVector = 64 ,block = 2):
+    def __init__(self, vocabSize = 120000, maxLong = 256, sizeVector = 128 ,block = 4):
         super().__init__()
         self.maxLong = maxLong
         self.tokenEmbed = nn.Embedding(vocabSize, sizeVector)
@@ -37,7 +38,7 @@ class TransformerRun(nn.Module):
 
 
         self.layers = nn.ModuleList([
-            TransformerBlock(sizeVector=sizeVector, numHeads=2)
+            TransformerBlock(sizeVector=sizeVector, numHeads=4)
             for _ in range(block)
             ])
 
@@ -45,14 +46,16 @@ class TransformerRun(nn.Module):
     def forward(self, x):
         B,T = x.shape
         tok = self.tokenEmbed(x)
-        pos = self.posEmbed(torch.arange(T,device=x.device))
-        pos = pos.unsqueeze(0).repeat(B, 1, 1)
+        pos = self.posEmbed(torch.arange(T, device=x.device)).unsqueeze(0)
 
         h = tok + pos
 
-        attMask = torch.triu(torch.ones(T, T, device=x.device), diagonal=1).bool()
+        attMask = torch.triu(
+            torch.full((T, T), float('-inf'), device=x.device),
+            diagonal=1
+            )
+        
         for layer in self.layers:
             h = layer(h, attMask=attMask)
         h = self.ln_f(h)
-
         return self.lmHead(h)
