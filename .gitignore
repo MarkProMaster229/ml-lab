@@ -13,3 +13,5 @@ exp/tensor/tensor_module.cpython-313-x86_64-linux-gnu.so
 TestPytorch/Transformer/__pycache__/Tokenizer.cpython-310.pyc
 TestPytorch/Transformer/MyNewModel/__pycache__/decoderOnly.cpython-310.pyc
 TestPytorch/Transformer/MyNewModel/__pycache__/tokenizer.cpython-310.pyc
+TestPytorch/Transformer/standart/__pycache__/decoderOnly.cpython-310.pyc
+TestPytorch/Transformer/standart/__pycache__/tokenizer.cpython-310.pyc

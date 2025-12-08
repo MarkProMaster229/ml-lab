@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 class TokenizerMy():
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
-        self.ds = load_dataset("json", data_files="/home/chelovek/gatasetexp/simple.json")
+        self.ds = load_dataset("json", data_files="/home/chelovek/Музыка/dataset.json")
     def tokenize(self, examples):
         input = self.tokenizer(
             examples["input"],
@@ -53,7 +53,7 @@ class TokenizerMy():
         train_data = dataset["train"]
         trainLoader = DataLoader(
             train_data,
-            batch_size=6,
+            batch_size=16,
             shuffle=True
         )
         return trainLoader

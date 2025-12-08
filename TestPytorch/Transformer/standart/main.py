@@ -4,8 +4,11 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from tokenizer import TokenizerMy
+
+#ура! 100 вклад в репу! сделано довольно много работы с августа(сегодня 08.12.2025) 
+#круто что спустя несколько месяцев я вновь в трансформерах!
 class WorkModel():
-    def __init__(self, sizeVector = 512, num_layers=12, maxLong=200):
+    def __init__(self, sizeVector = 64, num_layers=2, maxLong=200):
         self.tokenizator = TokenizerMy()
         self.vocabSize = self.tokenizator.get_vocab_size()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,13 +33,13 @@ class WorkModel():
     def workModel(self):
         tokenizator = self.tokenizator
         datalouder = tokenizator.datalouder()
-        numEpoch = 40
+        numEpoch = 65
 
         for epoch in range(numEpoch):
             print(f"эпоха{epoch}")
             self.model.train()
 
-            if epoch % 5 == 0:
+            if epoch % 10 == 0:
                 self.save_model(f"trained_model{epoch}")
 
             for batchINDX, batch in enumerate(datalouder):
