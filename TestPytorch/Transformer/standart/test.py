@@ -9,11 +9,12 @@ class ChatBot:
         
         # Создаем модель с параметрами токенизатора
         self.model = TransformerRun(
-            vocabSize=len(self.tokenizer),
-            maxLong=200,
-            sizeVector=64,
+            vocabSize=len(self.tokenizer), 
+            maxLong=256,
+            sizeVector=128,
             block=2
-        )
+            )
+
         
         # Загружаем веса модели
         self.model.load_state_dict(
@@ -25,7 +26,7 @@ class ChatBot:
         self.model.to(self.device)
         self.model.eval()
 
-    def generate(self, prompt, max_length=50, temperature=0.9, top_k=50):
+    def generate(self, prompt, max_length=50, temperature=0.1, top_k=1):
         # Токенизируем промпт
         inputs = self.tokenizer(prompt, return_tensors="pt")
         input_ids = inputs["input_ids"].to(self.device)
@@ -58,7 +59,7 @@ class ChatBot:
         return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
 
 if __name__ == "__main__":
-    bot = ChatBot("/home/chelovek/exper/newtrainedModel/epoch_10")
+    bot = ChatBot("/home/chelovek/exper/newtrainedModel/epoch_15")
     
     print("Бот готов! Напиши 'exit' для выхода.")
     
