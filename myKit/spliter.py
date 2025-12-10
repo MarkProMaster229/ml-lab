@@ -6,39 +6,41 @@ input_min_len = 10
 input_max_len = 30
 target_max_len = 30
 
-input_file = "/home/chelovek/Загрузки/Detstvo2.docx"
+input_file = "/home/chelovek2/Загрузки/voina-i-mir.docx"
 output_file = "MydatasetT2.json"
 
 doc = Document(input_file)
 texts = [p.text.strip().replace("\n", " ") for p in doc.paragraphs if p.text.strip()]
-text = " ".join(texts)
-words = text.split()
 
 dataset = []
 
-pos = 0
-num_words = len(words)
-
-while pos < num_words:
-    input_len_words = random.randint(input_min_len, input_max_len)
-    target_len_words = target_max_len
-
-    input_words = words[pos: pos + input_len_words]
-    input_text = " ".join(input_words)
-
-    target_start = pos + input_len_words
-    target_words = words[target_start: target_start + target_len_words]
-    target_text = " ".join(target_words)
-
-    if not input_text.strip() or not target_text.strip():
-        break
-
+for text in texts:
+    if len(text) < 50:
+        continue
+        
+    words = text.split()
+    if len(words) < input_min_len + target_max_len:
+        continue
+    
+    max_start = len(words) - input_min_len - target_max_len
+    if max_start <= 0:
+        continue
+        
+    start_pos = random.randint(0, max_start)
+    input_len = random.randint(input_min_len, min(input_max_len, len(words) - start_pos - target_max_len))
+    
+    input_words = words[start_pos: start_pos + input_len]
+    target_words = words[start_pos + input_len: start_pos + input_len + target_max_len]
+    
+    if len(input_words) < 5 or len(target_words) < 5:
+        continue
+        
     dataset.append({
-        "input": input_text.strip(),
-        "target": target_text.strip()
+        "input": " ".join(input_words),
+        "target": " ".join(target_words)
     })
 
-    pos += input_len_words
+random.shuffle(dataset)
 
 with open(output_file, "w", encoding="utf-8") as f:
     json.dump(dataset, f, ensure_ascii=False, indent=4)
