@@ -22,7 +22,7 @@ class ChatBot:
         )
         
         # Настраиваем устройство
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.model.to(self.device)
         self.model.eval()
 
@@ -59,7 +59,7 @@ class ChatBot:
         return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
 
 if __name__ == "__main__":
-    bot = ChatBot("/home/chelovek/exper/newtrainedModel/epoch_15")
+    bot = ChatBot("/home/chelovek/Музыка/epoch_35")
     
     print("Бот готов! Напиши 'exit' для выхода.")
     
@@ -67,5 +67,5 @@ if __name__ == "__main__":
         prompt = input("Ты: ")
         if prompt.lower() in ["exit", "quit"]:
             break
-        response = bot.generate(prompt, max_length=100, temperature=0.8, top_k=50)
+        response = bot.generate(prompt, max_length=100, temperature=0.5, top_k=50)
         print(f"Бот: {response}")

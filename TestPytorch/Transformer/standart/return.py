@@ -73,7 +73,7 @@ class TransformerRun(nn.Module):
         return self.lmHead(h)
 
 
-path = "/home/chelovek/Музыка/epoch_10"
+path = "/home/chelovek/Музыка/epoch_5"
 config = torch.load(f"{path}/config.pth")
 
 tokenizer = AutoTokenizer.from_pretrained(path)
@@ -91,13 +91,13 @@ model.to(device)
 model.load_state_dict(torch.load(f"{path}/model_weights.pth", map_location=device))
 
 optimizer = optim.Adam(model.parameters(), lr=config.get("lr", 1e-4))
-optimizer.load_state_dict(torch.load(f"{path}/optimizer.pth", map_location=device))
+#optimizer.load_state_dict(torch.load(f"{path}/optimizer.pth", map_location=device))
 
 model.train()
 
 
 
-dataset_path = "/home/chelovek/Загрузки/MydatasetT.json"
+dataset_path = "/home/chelovek/exper/newDataset.json"
 
 with open(dataset_path, "r", encoding="utf-8") as f:
     texts = [line.strip() for line in f if line.strip()]
@@ -124,20 +124,20 @@ def collate_fn(batch):
 
 
 dataset = MyDataset(texts, tokenizer, config["maxLong"])
-dataloader = DataLoader(dataset, batch_size=20, shuffle=True, collate_fn=collate_fn)
+dataloader = DataLoader(dataset, batch_size=24, shuffle=True, collate_fn=collate_fn)
 
 
 loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
 
-epochs = 30
-save_every = 5
+epochs = 10
+save_every = 1
 
 save_path = "/home/chelovek/exper/newtrainedModel"
 os.makedirs(save_path, exist_ok=True)
 
-scheduler = ReduceLROnPlateau(
-    optimizer, mode="min", factor=0.5, patience=1, verbose=True
-)
+#scheduler = ReduceLROnPlateau(
+#    optimizer, mode="min", factor=0.5, patience=1, verbose=True
+#)
 
 num_batches = len(dataloader)
 print(f"Количество батчей за эпоху: {num_batches}")
@@ -151,20 +151,21 @@ for epoch in range(epochs):
         optimizer.zero_grad()
 
         logits = model(batch)
+        #проверь проверь проверь проверь проверь проверь проверь проверь проверь проверь
         logits = logits[:, :-1, :].contiguous()
         targets = batch[:, 1:].contiguous()
-        
+        #проверь проверь проверь проверь проверь проверь проверь проверь проверь
         loss = loss_fn(
             logits.reshape(-1, logits.size(-1)),
             targets.reshape(-1)
-        )
+        )#проверь проверь проверь проверь проверь проверь проверь
 
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
 
     avg_loss = epoch_loss / num_batches
-    scheduler.step(avg_loss)
+    #scheduler.step(avg_loss)
 
     print(f"[Эпоха {epoch+1}/{epochs}] Loss: {avg_loss:.4f}, LR: {optimizer.param_groups[0]['lr']:.6f}")
 
