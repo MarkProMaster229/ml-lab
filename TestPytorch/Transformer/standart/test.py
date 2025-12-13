@@ -16,10 +16,10 @@ class ChatBot:
             )
 
         
-        # Загружаем веса модели
         self.model.load_state_dict(
-            torch.load(f"{model_path}/model_weights.pth", map_location='cpu', weights_only=True)
-        )
+            torch.load(f"{model_path}/model_weights.pth", 'cpu'), 
+            strict=False
+            )
         
         # Настраиваем устройство
         self.device = torch.device("cpu")
@@ -59,7 +59,7 @@ class ChatBot:
         return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
 
 if __name__ == "__main__":
-    bot = ChatBot("/home/chelovek/Музыка/epoch_35")
+    bot = ChatBot("/home/chelovek/exper/newtrainedModel/epoch_4")
     
     print("Бот готов! Напиши 'exit' для выхода.")
     
@@ -67,5 +67,5 @@ if __name__ == "__main__":
         prompt = input("Ты: ")
         if prompt.lower() in ["exit", "quit"]:
             break
-        response = bot.generate(prompt, max_length=100, temperature=0.5, top_k=50)
+        response = bot.generate(prompt, max_length=100, temperature =0.5 , top_k=50)
         print(f"Бот: {response}")

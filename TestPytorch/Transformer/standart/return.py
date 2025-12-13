@@ -5,7 +5,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
+from datasets import load_dataset
 
 
 #Transformer Block
@@ -50,6 +50,8 @@ class TransformerRun(nn.Module):
         ])
 
         self.lmHead = nn.Linear(sizeVector, vocabSize)
+        mask = torch.triu(torch.full((maxLong, maxLong), float('-inf')), diagonal=1)
+        self.register_buffer("attMask", mask)
 
     def forward(self, x):
         B, T = x.shape
@@ -61,19 +63,14 @@ class TransformerRun(nn.Module):
         # causal mask была сломана !!!!!!!
         #causal maskcausal maskcausal maskcausal maskcausal maskcausal maskcausal mask
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        attMask = torch.triu(
-            torch.full((T, T), float('-inf'), device=x.device),
-            diagonal=1
-        )
-
+        attMask = self.attMask[:T, :T]
         for layer in self.layers:
             h = layer(h, attMask)
 
         h = self.ln_f(h)
         return self.lmHead(h)
 
-
-path = "/home/chelovek/Музыка/epoch_5"
+path = "/home/chelovek/Музыка/epoch_4"
 config = torch.load(f"{path}/config.pth")
 
 tokenizer = AutoTokenizer.from_pretrained(path)
@@ -88,7 +85,10 @@ model = TransformerRun(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-model.load_state_dict(torch.load(f"{path}/model_weights.pth", map_location=device))
+model.load_state_dict(
+    torch.load(f"{path}/model_weights.pth", map_location=device), 
+    strict=False
+)
 
 optimizer = optim.Adam(model.parameters(), lr=config.get("lr", 1e-4))
 #optimizer.load_state_dict(torch.load(f"{path}/optimizer.pth", map_location=device))
@@ -97,7 +97,7 @@ model.train()
 
 
 
-dataset_path = "/home/chelovek/exper/newDataset.json"
+dataset_path = "/home/chelovek/Музыка/MydatasetT2_F.json"
 
 with open(dataset_path, "r", encoding="utf-8") as f:
     texts = [line.strip() for line in f if line.strip()]
@@ -124,12 +124,12 @@ def collate_fn(batch):
 
 
 dataset = MyDataset(texts, tokenizer, config["maxLong"])
-dataloader = DataLoader(dataset, batch_size=24, shuffle=True, collate_fn=collate_fn)
+dataloader = DataLoader(dataset, batch_size=9, shuffle=True, collate_fn=collate_fn)
 
 
 loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
 
-epochs = 10
+epochs = 160
 save_every = 1
 
 save_path = "/home/chelovek/exper/newtrainedModel"
