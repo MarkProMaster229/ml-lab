@@ -6,128 +6,152 @@ from datasets import load_dataset
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
-path = "/home/chelovek/Музыка/epoch_4"
-tokenizer = AutoTokenizer.from_pretrained(path)
-config = torch.load(f"{path}/config.pth")
-tokenizer = AutoTokenizer.from_pretrained(path)
 
-class train():
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+path = "/home/chelovek/Музыка/epoch_2"
+
+class Train():
     def __init__(self):
         self.text = None
-
-    def glob():
-        # вы ничего не понимаете!
-        # это арт-объект(честно-причестно)
-        global model
-        model = TransformerRun(
-            vocabSize=config["vocabSize"],
-            maxLong=config["maxLong"],
-            sizeVector=config["sizeVector"],
-            block=config["numLayers"],
+        self._model = None
+        self.optimizer = None
+        self._config = None
+        self.tokinize = None
+        self.tokinize = AutoTokenizer.from_pretrained(path)
+        if self.tokinize.pad_token is None:
+            self.tokinize.pad_token = self.tokinize.eos_token
+    def loadWeight(self):
+        if self._model is None:
+            if self._config is None:
+                self._config = torch.load(f"{path}/config.pth")
+                self._model = TransformerRun(
+                    vocabSize=self._config["vocabSize"],
+                    maxLong=self._config["maxLong"], 
+                    sizeVector=self._config["sizeVector"],
+                    block=self._config["numLayers"]
+                ).to(device)
+            
+            self._model.load_state_dict(
+                torch.load(f"{path}/model_weights.pth", map_location=device),
+                strict=False
             )
-        global device
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-        
-        model.load_state_dict(
-            torch.load(f"{path}/model_weights.pth", map_location=device), 
-            strict=False
+        return self._model
+    
+    def Optimizator(self):
+        if self.optimizer == None:
+            self.optimizer = optim.Adam(
+                self._model.parameters(), 
+                lr=self._config.get("lr", 1e-4)
             )
-        
-        global optimizer
-        optimizer = optim.Adam(model.parameters(), lr=config.get("lr", 1e-4))
+        return self.optimizer
+    
 
-        model.train()
-        
-        dataset_path = load_dataset(
-            "json",
-            data_files="/home/chelovek/Музыка/MydatasetT2_F.json",
-            split="train"
-            )
-        with open(dataset_path, "r", encoding="utf-8") as f:
-            texts = [line.strip() for line in f if line.strip()]
-        return texts 
-
-class MyDataset(Dataset):
-    def __init__(self, texts, tokenizer, max_length):
-        self.data = [
-            tokenizer.encode(t, truncation=True, max_length=max_length)
-            for t in texts
-        ]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        return torch.tensor(self.data[idx], dtype=torch.long)
-
-def collate_fn(batch):
-    return torch.nn.utils.rnn.pad_sequence(
-        batch, batch_first=True, padding_value=tokenizer.pad_token_id
-    )
-
-def tokenize(batch):
-    return tokenizer(
-        batch["text"],
-        truncation=True,
-        max_length=config["maxLong"],
+    def tokinizer(self,input):
+        return self.tokinize(
+            input["text"],
+            truncation=True,
+            padding="max_length",
+            max_length=self._config["maxLong"],
+            return_attention_mask=True
         )
-texts = train.glob()
-dataset = load_dataset("json", data_files="...")["train"]
+    
+    def dataset(self, data_path):
+        import os
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"
+        
+        dataset = load_dataset("json", data_files=data_path)
+        train_dataset = dataset["train"]
+        texts = []
+        for example in train_dataset:
+            full_text = f"{example['input']} {example['target']}"
+            texts.append(full_text)
+        print(f"полных текстов{len(texts)}")
+        
+        encoded = self.tokinize(
+            texts,
+            truncation=True,
+            padding="max_length",
+            max_length=self._config["maxLong"],
+            return_tensors="pt",
+            return_attention_mask=True
+            )
+        class TextDataset(torch.utils.data.Dataset):
+            def __init__(self, encodings):
+                self.encodings = encodings
+                
+            def __len__(self):
+                return len(self.encodings["input_ids"])
+            
+            def __getitem__(self, idx):
+                
+                return {
+                    "input_ids": self.encodings["input_ids"][idx],
+                    "attention_mask": self.encodings["attention_mask"][idx]
+                    }
+                
+        print(f"Примеров: {len(encoded['input_ids'])}")
+        return TextDataset(encoded)
 
-dataset = dataset.map(
-    tokenize,
-    batched=True,
-    num_proc=6,
-    remove_columns=dataset.column_names
-    )
-#А эти 9 батчей? Это оптимальное число для резонанса градиентов - я вывел формулу пока сидел в псих-диспансере
-#9 - это перевернутая 6, а 6 - число дьявола, значит 9 = анти-дьявол = хорошо для градиентов
-dataloader = DataLoader(dataset, batch_size=9, shuffle=True, collate_fn=collate_fn)
+    
+    def create_dataloader(self, dataset, batch_size=9):
+        def collate_fn(batch):
+            input_ids = torch.stack([item["input_ids"] for item in batch])
+            attention_mask = torch.stack([item["attention_mask"] for item in batch])
+            return {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask
+            }
+        return DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            collate_fn=collate_fn
+            )
+
+#---------------------------------------------------------------
+trainer = Train()
+model = trainer.loadWeight()
+optimizer = trainer.Optimizator()
+config = trainer._config
+tokenizer = trainer.tokinize
+dataset = trainer.dataset("/home/chelovek/Загрузки/dataset(1).json")
+dataloader = trainer.create_dataloader(dataset, batch_size=9)
+
 loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
 
-
-
-
-
 epochs = 160
-save_every = 1
-
+save_every = 10
 save_path = "/home/chelovek/exper/newtrainedModel"
 os.makedirs(save_path, exist_ok=True)
-
-#scheduler = ReduceLROnPlateau(
-#    optimizer, mode="min", factor=0.5, patience=1, verbose=True
-#)
 
 num_batches = len(dataloader)
 print(f"Количество батчей за эпоху: {num_batches}")
 
 for epoch in range(epochs):
+    model.train()
     epoch_loss = 0.0
 
     for batch in dataloader:
-        batch = batch.to(device)
-
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch["attention_mask"].to(device)
+        
         optimizer.zero_grad()
 
-        logits = model(batch)
-        #проверь проверь проверь проверь проверь проверь проверь проверь проверь проверь
+        logits = model(input_ids)
+        
         logits = logits[:, :-1, :].contiguous()
-        targets = batch[:, 1:].contiguous()
-        #проверь проверь проверь проверь проверь проверь проверь проверь проверь
+        targets = input_ids[:, 1:].contiguous()
+        
         loss = loss_fn(
             logits.reshape(-1, logits.size(-1)),
             targets.reshape(-1)
-        )#проверь проверь проверь проверь проверь проверь проверь
+        )
 
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
 
     avg_loss = epoch_loss / num_batches
-    #scheduler.step(avg_loss)
-
     print(f"[Эпоха {epoch+1}/{epochs}] Loss: {avg_loss:.4f}, LR: {optimizer.param_groups[0]['lr']:.6f}")
 
     if (epoch + 1) % save_every == 0:
@@ -141,7 +165,6 @@ for epoch in range(epochs):
 
         print(f"Модель сохранена: {epoch_dir}")
 
-
 torch.save(model.state_dict(), f"{path}/model_weights.pth")
 torch.save(optimizer.state_dict(), f"{path}/optimizer.pth")
 torch.save(config, f"{path}/config.pth")
@@ -149,10 +172,10 @@ tokenizer.save_pretrained(path)
 
 print(f"Финальная модель сохранена в {path}")
 
-
+#---------------------------------------------------------------
 #пока лежал в пнд
 
-#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡀⠀⠀⠀⠀⠀⠀⠀⢀⣠⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠁⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡀⠀⠀⠀⠀⠀⠀⠀⢀⣠⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠁⠀⠀⡀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⢶⣿⢃⣠⣴⣶⣶⣿⣛⢯⣹⣾⠁⠀⠀⠀⠀⠀⢀⣀⣤⣴⣶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠀⠀⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣻⣾⣿⣞⣯⣷⣽⣾⣿⣁⣀⣠⢤⡶⣶⠿⣻⣶⣟⡿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠀⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣟⣯⣿⣶⣯⣿⣿⣿⡁⠀⣴⠿⣟⣿⣟⣿⣻⢷⢯⣞⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⢈⡇⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -165,7 +188,7 @@ print(f"Финальная модель сохранена в {path}")
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣿⣿⣓⣈⣰⣦⣤⣀⣼⠋⠀⠀⢭⣽⣿⡇⠀⣀⣀⣿⣿⡇⡸⣿⣿⡤⠉⠒⠤⣀⠀⠠⡄⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⢹⠏⠀⠛⣞⣧⣾⠍⠢⣀⠀⠈⠻⠟⣇⢉⣡⡶⣭⠯⡀⠐⠛⠙⢇⠀⠐⢲⠏⠀⠀⠈⠲⠞⠀⠀⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡴⠁⢀⠄⠂⢸⠛⠁⣠⣲⡆⢔⠾⠋⠀⠈⠢⣉⠀⢀⣀⣈⡆⠀⠀⢸⣀⠔⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀
-#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠤⣌⡁⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⡿⠀⠀⣜⣩⠟⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠤⣌⡁⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⡿⠀⠀⣜⣩⠟⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀Loss: 2.9382, LR: 0.000100⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠼⣛⡉⠀⠀⠓⢄⡀⠀⠀⠀⠀⠀⠀⢀⡀⠀⠀⡹⠋⠀⣠⠞⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠐⠒⠚⣿⣶⠦⣄⣀⡀⠘⠿⠽⠶⢾⣷⣀⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣀⡀⣀⣀⣠⡿⠍⣛⠻⡿⠿⣟⣲⣶⣶⡶⠿⣿⣖⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
