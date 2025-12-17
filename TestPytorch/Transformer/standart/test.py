@@ -26,7 +26,7 @@ class ChatBot:
         self.model.to(self.device)
         self.model.eval()
 
-    def generate(self, prompt, max_length=50, temperature=0.1, top_k=1):
+    def generate(self, prompt, max_length=50, temperature=0.4, top_k=1):
         # Токенизируем промпт
         inputs = self.tokenizer(prompt, return_tensors="pt")
         input_ids = inputs["input_ids"].to(self.device)
@@ -59,7 +59,7 @@ class ChatBot:
         return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
 
 if __name__ == "__main__":
-    bot = ChatBot("/home/chelovek/exper/newtrainedModel/epoch_4")
+    bot = ChatBot("/home/chelovek/Музыка/epoch_1")
     
     print("Бот готов! Напиши 'exit' для выхода.")
     
@@ -67,5 +67,5 @@ if __name__ == "__main__":
         prompt = input("Ты: ")
         if prompt.lower() in ["exit", "quit"]:
             break
-        response = bot.generate(prompt, max_length=100, temperature =0.5 , top_k=50)
+        response = bot.generate(prompt, max_length=100, temperature =0.1 , top_k=1)
         print(f"Бот: {response}")

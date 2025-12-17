@@ -33,7 +33,6 @@ class Train():
             
             self._model.load_state_dict(
                 torch.load(f"{path}/model_weights.pth", map_location=device),
-                strict=False
             )
         return self._model
     
@@ -41,7 +40,7 @@ class Train():
         if self.optimizer == None:
             self.optimizer = optim.Adam(
                 self._model.parameters(), 
-                lr=self._config.get("lr", 1e-4)
+                lr=self._config.get("lr", 2e-4)
             )
         return self.optimizer
     
@@ -93,7 +92,7 @@ class Train():
         return TextDataset(encoded)
 
     
-    def create_dataloader(self, dataset, batch_size=9):
+    def create_dataloader(self, dataset, batch_size=10):
         def collate_fn(batch):
             input_ids = torch.stack([item["input_ids"] for item in batch])
             attention_mask = torch.stack([item["attention_mask"] for item in batch])
@@ -114,13 +113,13 @@ model = trainer.loadWeight()
 optimizer = trainer.Optimizator()
 config = trainer._config
 tokenizer = trainer.tokinize
-dataset = trainer.dataset("/home/chelovek/Загрузки/dataset(1).json")
-dataloader = trainer.create_dataloader(dataset, batch_size=9)
+dataset = trainer.dataset("/home/chelovek/Музыка/finaly.json")
+dataloader = trainer.create_dataloader(dataset, batch_size=11)
 
 loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
 
 epochs = 160
-save_every = 10
+save_every = 1
 save_path = "/home/chelovek/exper/newtrainedModel"
 os.makedirs(save_path, exist_ok=True)
 
@@ -258,3 +257,4 @@ print(f"Финальная модель сохранена в {path}")
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠦⣌⡐⢀⠂⡈⠐⡀⠻⣿⣿⣿⣾⣿⣿⣽⣯⣿⣟⣷⣿⣾⣿⣿⣿⡿⠀⡁⠂⡐⠠⠁⠌⠠⠁⠂⠄⡈⢿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣾⣷⣿⣾⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠑⠒⠃⠐⠤⠀⠙⠛⠿⠿⣿⣿⣿⣿⠿⠿⠟⠛⢋⠉⡀⠄⢂⠐⠠⠐⠠⠁⠌⠠⠁⠌⠠⠐⡀⠈⠉⠛⠛⠟⠻⠟⠟⠻⠛⠛⠛⠛⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 #⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠒⠐⠒⠂⠂⠂⠑⠀⠃⠈⠀⠃⠈⠀⠁⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#разве тут что-то, когда-то было? Впрочем, это не имеет значение. Ведь так ? 
