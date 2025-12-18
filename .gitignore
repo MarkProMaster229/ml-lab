@@ -16,3 +16,5 @@ TestPytorch/Transformer/MyNewModel/__pycache__/tokenizer.cpython-310.pyc
 TestPytorch/Transformer/standart/__pycache__/decoderOnly.cpython-310.pyc
 TestPytorch/Transformer/standart/__pycache__/tokenizer.cpython-310.pyc
 TestPytorch/Transformer/education/__pycache__/Mytransformers.cpython-310.pyc
+TestPytorch/Transformer/Encoder-only/__pycache__/encoderOInly.cpython-310.pyc
+TestPytorch/Transformer/Encoder-only/__pycache__/tokenizer.cpython-310.pyc
