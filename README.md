@@ -1,22 +1,38 @@
 # ml-lab
 
-**Wiki для работы:** [https://github.com/MarkProMaster229/ml-lab/wiki](https://github.com/MarkProMaster229/ml-lab/wiki)
+## папка CNN
+#### имеет несколько экспериментальных версий 
+#### experiment1
+имеет подробные комментарии для погружения в тему
+#### experiment2
+проведены тесты - влияние архитектуры на сходимость модели.  
+Первая попытка уменьшить вес, см. подробнее в самом файле.
+#### experiment3
+вторая попытка уменьшить вес, успех! Получен прирост к точности,  
+а также размер модели стал значительно меньше, подробнее описано в самом файле.
 
----
+## папка myKit
+содержит инструменты, которые были созданы в процессе работы.
+
+## папка TestPytorch
+### папка Transformer 
+содержит экспериментальные encoder-only, а также decoder-only модели,  
+подробнее см. в самих папках.
+
+# устарело -
 
 ## Сборка
 
-Перейди в директорию проекта и соберите программу:
+Перейди в директорию проекта и собери программу:
 
 ```bash
-cd /home/chelovek/Документы/work/ml-lab/baseModel #cвой путь
+cd /home/chelovek/Документы/work/ml-lab/baseModel # свой путь
 
 g++ -std=c++17 -g \
     -ICore -IGeneration -IModel \
     Core/main.cpp Core/Runner.cpp Core/BatchGenerator.cpp \
     Model/Transformer.cpp Model/AttentionLogits.cpp \
     -o Core/main.out
-
 ```
 
 Запуск
