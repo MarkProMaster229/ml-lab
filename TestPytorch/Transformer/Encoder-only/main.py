@@ -3,7 +3,7 @@ from tokenizer import TokenizerForClassification  # ← это ТОКЕНИЗА�
 import torch
 import torch.optim as optim
 import torch.nn as nn
-
+#partially generated ai
 class ClassifierModel():
     def __init__(self, sizeVector=512, num_layers=16, maxLong=100):
         # 1. ТОКЕНИЗАТОР - отдельный класс
@@ -32,8 +32,8 @@ class ClassifierModel():
         self.criterion = nn.CrossEntropyLoss()
     
     def train_model(self):
-        # 3. Метод токенизатора называется dataloader()
-        dataloader = self.tokenizer.dataloader()  # ← правильно
+        #no using ai!
+        dataloader = self.tokenizer.dataloader()
         numEpoch = 120
 
         for epoch in range(numEpoch):
@@ -93,7 +93,7 @@ class ClassifierModel():
         accuracy = total_correct / total_samples
         print(f"Точность на всём датасете: {accuracy:.2%}")
         return accuracy
-    
+    #ai
     # 13. Метод для предсказания
     def predict(self, text):
         self.model.eval()
@@ -115,7 +115,7 @@ class ClassifierModel():
             label_name = self.tokenizer.get_label_name(predicted_class)
             
             return predicted_class, label_name, outputs.softmax(dim=1)
-    
+    #not ai 
     def save_model(self, path="my_classifier"):
         import os
         os.makedirs(path, exist_ok=True)

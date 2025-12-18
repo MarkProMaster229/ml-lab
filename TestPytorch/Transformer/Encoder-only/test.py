@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoTokenizer
 import json
-
+#fully generated ai 
 # 1. Восстанавливаем архитектуру модели (должна совпадать с обученной)
 class TransformerBlock(nn.Module):
     def __init__(self, sizeVector=512, numHeads=8):
