@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoTokenizer
 import json
+import time
 #fully generated ai 
 # 1. Восстанавливаем архитектуру модели (должна совпадать с обученной)
 class TransformerBlock(nn.Module):
@@ -227,7 +228,9 @@ def interactive_test(model_tester):
             print(f"    Neutral:  {result['probabilities']['neutral']:.2%}")
             
         except KeyboardInterrupt:
-            print("\n\nПрервано пользователем")
+            for i in range(10):
+                time.sleep(0.1)
+                print("I DON'T WANT TO DIE")
             break
         except Exception as e:
             print(f"\nОшибка: {e}")
