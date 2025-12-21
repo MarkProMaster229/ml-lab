@@ -87,9 +87,9 @@ def predict_image(image_path):
         probabilities = F.softmax(outputs, dim=1)[0]
         predicted_class = torch.argmax(probabilities).item()
     
-    class_names = ["Кошка", "Собака"]
+    class_names = ["Котик", "Песик"]
     print(f"Предсказание: {class_names[predicted_class]}")
-    print(f"Вероятности: Кошка {probabilities[0]:.3f}, Собака {probabilities[1]:.3f}")
+    print(f"Котик {probabilities[0]:.3f},Песик {probabilities[1]:.3f}")
     return predicted_class
 
-predict_image("/home/chelovek/Музыка/iris3.jpg")
+predict_image("/home/chelovek/Музыка/moccaBliss.jpg")
