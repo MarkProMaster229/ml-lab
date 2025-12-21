@@ -51,56 +51,75 @@ def collate_fn(batch):
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, collate_fn=collate_fn)
 
-# меня вынудили сделать не так
-#class CNN(nn.Module):
-#    def __init__(self):
-#        super(CNN, self).__init__()
-#        self.conv1 = nn.Conv2d(1,64,kernel_size=2,padding=1)
-#        self.conv2 = nn.Conv2d(64, 128, kernel_size=4, padding=1)
-#        self.conv3 = nn.Conv2d(128, 256, kernel_size=8, padding=1)
-#        self.conv4 = nn.Conv2d(256, 512, kernel_size=6, padding=1)
-#        self.conv5 = nn.Conv2d(512, 1024, kernel_size=3, padding=1)
-#        self.fc1 = nn.Linear(1024*8*8, 512)
-#        self.fc2 = nn.Linear(512, 256)
-#        self.fc3 = nn.Linear(256, 128)
-#        self.fc4 = nn.Linear(128, 26)
-#    def forward(self, x):
-#        x = F.relu(self.conv1(x))
-#        x = F.relu(self.conv2(x))
-#        x = F.max_pool2d(x,8)
-#        x = F.relu(self.conv3(x))
-#        x = F.relu(self.conv4(x))
-#        x = F.max_pool2d(x,4)
-#        x = F.relu(self.conv5(x))
 
-#        x = x.view(x.size(0), -1)
-#        x = F.relu(self.fc1(x))
-#        x = F.relu(self.fc2(x))
-#        x = F.relu(self.fc3(x))
-#        x = self.fc4(x)
-#
-#        return x
 
-# а вот так(( но это скучнее
+
+
+
 class CNN(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, 5, padding=2)
-        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
-        self.pool = nn.MaxPool2d(2,2)
-        self.adaptive_pool = nn.AdaptiveAvgPool2d((64, 64))
-        self.fc1 = nn.Linear(128*64*64, 256)
+        
+        self.conv1Atten1 = nn.Conv2d(3, 32, 6, padding=1)
+        self.conv1Atten2 = nn.Conv2d(3, 32, 6, padding=1)
+
+        self.conv2mulyAtten1 = nn.Conv2d(32, 64, 3, padding=1)
+        self.conv2mulyAtten2 = nn.Conv2d(32, 64, 3, padding=1)
+
+        self.pooltwo  = nn.MaxPool2d(2,2)
+        self.pooltwoDow = nn.MaxPool2d(2,2)
+
+        self.pooConv1 = nn.Conv2d(64, 128, 3, padding=1)
+        self.pooConv2 = nn.Conv2d(64, 128, 3, padding=1)
+
+        self.conv3mulyAtten1 = nn.Conv2d(128, 256, 3, padding=1)
+        self.conv3mulyAtten2 = nn.Conv2d(128, 256, 3, padding=1)
+
+        self.finalyConvAtten = nn.Conv2d(512, 512, 3, padding=1)
+
+        self.finalyPoolMax = nn.MaxPool2d(2,2)
+
+        #до адаптивного пуллинга 62 на 62 ппц 
+        self.attenInput = nn.Conv2d(512, 512, 3, padding=1)
+
+
+
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((16, 16))
+
+        self.fc1 = nn.Linear(512*16*16 , 256)
         self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(128,64)
         self.fc4 = nn.Linear(64, 2)
 
-    def forward(self,x):
-        x = F.relu(self.conv1(x))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = F.relu(self.conv3(x))
+    def forward(self, x, y):
+
+        #print(f"x channels: {x.shape[1]}")
+        #print(f"y channels: {y.shape[1]}")
+        #print(f"Total after concat: {x.shape[1] + y.shape[1]}")
+        #print(x.shape)
+        x = F.relu(self.conv1Atten1(x))#64
+        y = F.relu(self.conv1Atten2(y))#64
+
+        x = F.relu(self.conv2mulyAtten1(x))#32
+        y = F.relu(self.conv2mulyAtten2(y))#32
+
+        x = self.pooltwo(F.relu(self.pooConv1(x)))#16
+        y = self.pooltwoDow(F.relu(self.pooConv2(y)))#16
+
+
+        x = F.relu(self.conv3mulyAtten1(x))#8
+        y = F.relu(self.conv3mulyAtten2(y))#8
+
+
+        finaly = torch.cat([x,y], dim=1)
+        x = F.relu(self.finalyConvAtten(finaly))#4
+
+        x = self.finalyPoolMax(F.relu(self.attenInput(x)))
+
         x = self.adaptive_pool(x)
+        #print(x.shape)
         x = x.view(x.size(0), -1)
+
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
@@ -110,11 +129,13 @@ class CNN(nn.Module):
 
 
 
+
+
 train_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=160, shuffle=True, collate_fn=collate_fn
+    train_dataset, batch_size=46, shuffle=True, collate_fn=collate_fn
 )
 test_loader = torch.utils.data.DataLoader(
-    test_dataset, batch_size=160, shuffle=False, collate_fn=collate_fn
+    test_dataset, batch_size=46, shuffle=False, collate_fn=collate_fn
 )
 train_losses = []
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -123,23 +144,32 @@ print("Using device:", device)
 model = CNN().to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.003)#???
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)#???
 
-for epoch in range(6):
+for epoch in range(8):
     running_loss = 0
     for batch in train_loader:
         images = batch["image"].to(device)
         labels = batch["labels"].to(device)
-
+        
         optimizer.zero_grad()
-        outputs = model(images)
+        
+        batch_size, channels, height, width = images.shape
+        images_top = images[:, :, :height//2, :]
+        images_bottom = images[:, :, height//2:, :]
+        
+        outputs = model(images_top, images_bottom)
+        
         loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-        running_loss += loss.item()
+        
 
+        loss.backward()
+        
+        optimizer.step()
+        
+        running_loss += loss.item()
+    
     epoch_loss = running_loss / len(train_loader)
-    train_losses.append(epoch_loss)
     print(f"Epoch {epoch+1}, Loss: {epoch_loss:.4f}")
     
 from safetensors.torch import save_file
