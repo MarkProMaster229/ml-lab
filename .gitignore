@@ -20,3 +20,9 @@ TestPytorch/Transformer/Encoder-only/__pycache__/encoderOInly.cpython-310.pyc
 TestPytorch/Transformer/Encoder-only/__pycache__/tokenizer.cpython-310.pyc
 CNN/experiment4CatDog/__pycache__/cnn_model.cpython-310.pyc
 CNN/experiment4CatDog/__pycache__/CNN.cpython-310.pyc
+myKit/GenerateSynthetic/__pycache__/config.cpython-310.pyc
+myKit/GenerateSynthetic/__pycache__/data_manager.cpython-310.pyc
+myKit/GenerateSynthetic/__pycache__/model_client.cpython-310.pyc
+myKit/GenerateSynthetic/__pycache__/stats_manager.cpython-310.pyc
+myKit/GenerateSynthetic/__pycache__/validator.cpython-310.pyc
+myKit/GenerateSynthetic/__pycache__/prompt_generator.cpython-310.pyc
