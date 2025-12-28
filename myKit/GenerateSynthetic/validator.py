@@ -115,8 +115,8 @@ class ResponseValidator:
             return False
         
         # Слишком длинные (более 45 слов)
-        if len(data["input"].split()) > 45 or len(data["target"].split()) > 45:
-            print(f"⚠️ Слишком длинный текст (более 45 слов)")
+        if len(data["input"].split()) > 75 or len(data["target"].split()) > 75:
+            print(f"⚠️ Слишком длинный текст (более 75 слов)")
             return False
         
         return True
