@@ -26,3 +26,9 @@ myKit/GenerateSynthetic/__pycache__/model_client.cpython-310.pyc
 myKit/GenerateSynthetic/__pycache__/stats_manager.cpython-310.pyc
 myKit/GenerateSynthetic/__pycache__/validator.cpython-310.pyc
 myKit/GenerateSynthetic/__pycache__/prompt_generator.cpython-310.pyc
+myKit/SyntheticClassif/__pycache__/config.cpython-310.pyc
+myKit/SyntheticClassif/__pycache__/data_manager.cpython-310.pyc
+myKit/SyntheticClassif/__pycache__/model_client.cpython-310.pyc
+myKit/SyntheticClassif/__pycache__/stats_manager.cpython-310.pyc
+myKit/SyntheticClassif/__pycache__/validator.cpython-310.pyc
+myKit/SyntheticClassif/__pycache__/prompt_generator.cpython-310.pyc

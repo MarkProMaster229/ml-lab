@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-path = "/home/chelovek/Музыка/epoch_1"
+path = "/home/chelovek/Музыка/model"
 
 class Train():
     def __init__(self):
@@ -113,12 +113,12 @@ model = trainer.loadWeight()
 optimizer = trainer.Optimizator()
 config = trainer._config
 tokenizer = trainer.tokinize
-dataset = trainer.dataset("/home/chelovek/exper/MydatasetT2_F.json")
+dataset = trainer.dataset("/home/chelovek/Загрузки/BigBoss.json")
 dataloader = trainer.create_dataloader(dataset, batch_size=12)
 
 loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
 
-epochs = 160
+epochs = 10
 save_every = 1
 save_path = "/home/chelovek/exper/newtrainedModel"
 os.makedirs(save_path, exist_ok=True)

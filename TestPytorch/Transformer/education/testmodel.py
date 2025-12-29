@@ -90,7 +90,7 @@ if __name__ == "__main__":
         model.load_state_dict(checkpoint)
     model.to(device)
 
-    start_text = "Привет, я "
+    start_text = "мне очень плохо "
     start_tokens = tokenizer.encode(start_text, return_tensors="pt").to(device)
 
     generated_tokens = generate(
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         start_tokens,
         length=100,
         device=device,
-        temperature=0.5
+        temperature=0.2
     )
 
     generated_text = tokenizer.decode(generated_tokens[0].tolist(), skip_special_tokens=True)

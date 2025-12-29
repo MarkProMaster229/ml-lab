@@ -500,7 +500,7 @@ def main():
         "target_count": 5000,
         "delay_between_requests": 2.0,
         "output_filename": "synthetic_dataset.json",
-        "temperature": 0.8,
+        "temperature": 0.6,
         "top_p": 0.95,
         "num_predict": 350,
         "repeat_penalty": 1.2
