@@ -140,11 +140,11 @@ class SyntheticDataGenerator:
         # route_url (чаще всего sintetic)
         if random.random() > 0.7:  # 30% случаев даем реальный URL
             route_url = random.choice([
-                "https://www.y-taxi.ru/nnov/route/598/",
-                "https://www.y-taxi.ru/nnov/route/617/",
-                "https://darudar.org/wardens/responses/positive/",
-                "https://otzovik.com/reviews/",
-                "https://irecommend.ru/content/"
+                "https://random1",
+                "https://random2",
+                "https://random3",
+                "https://random4",
+                "https://random5"
             ])
         else:
             route_url = "sintetic"
@@ -233,7 +233,7 @@ def main():
     config_dict = {
         "model_name": "ministral-3:latest",
         "ollama_url": "http://localhost:11434/api/generate",
-        "target_count": 100, 
+        "target_count": 100000, 
         "delay_between_requests": 2.0,
         "output_filename": "synthetic_classification_dataset.json",
         "temperature": 0.6,
