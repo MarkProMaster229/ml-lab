@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 
 class TransformerBlock(nn.Module):
-    def __init__(self, sizeVector = 512, numHeads = 8):
+    def __init__(self, sizeVector = 128, numHeads = 4):
         super().__init__()
         self.ln1 = nn.LayerNorm(sizeVector)
         self.attn = nn.MultiheadAttention(sizeVector, numHeads, batch_first=True)
@@ -29,7 +29,7 @@ class TransformerBlock(nn.Module):
         return x
     
 class TransformerRun(nn.Module):
-    def __init__(self, vocabSize = 120000, maxLong = 100, sizeVector = 512,block = 14):
+    def __init__(self, vocabSize = 120000, maxLong = 100, sizeVector = 128,block = 4):
         super().__init__()
         self.maxLong = maxLong 
         self.Vectorization = nn.Embedding(vocabSize, sizeVector)
@@ -39,7 +39,7 @@ class TransformerRun(nn.Module):
             for _ in range(block)
             ])
         
-        self.lmHead = nn.Linear(sizeVector, 3)#тут хз мы же по идеи должны три выхода иметь не более
+        self.lmHead = nn.Linear(sizeVector, 3)#да три выхода 
 
     def forward(self, x):
         B, T = x.shape
@@ -48,7 +48,7 @@ class TransformerRun(nn.Module):
         pos = self.posEmbed(positions)
 
 
-        h = tok + pos# позиционка я хз нужна тут или нет 
+        h = tok + pos# нужна позиционка 
 
         cls = h.mean(dim=1)
         

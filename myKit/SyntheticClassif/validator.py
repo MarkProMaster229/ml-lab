@@ -123,7 +123,7 @@ class ResponseValidator:
         
         # Слишком короткие
         word_count = len(text.split())
-        if word_count < 10:  # Уменьшил с 15 до 10
+        if word_count < 5:  # Уменьшил с 15 до 10
             print(f"⚠️ Слишком короткий текст: {word_count} слов (минимум 10)")
             return False
         

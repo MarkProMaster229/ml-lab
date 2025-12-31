@@ -34,13 +34,13 @@ class ClassifierModel():
     def train_model(self):
         #no using ai!
         dataloader = self.tokenizer.dataloader()
-        numEpoch = 120
+        numEpoch = 70
 
         for epoch in range(numEpoch):
             print(f"Эпоха {epoch+1}/{numEpoch}")
             self.model.train()
             
-            if (epoch + 1) % 120 == 0:
+            if (epoch + 1) % 70 == 0:
                 self.save_model(f"classifier_epoch{epoch+1}")
 
             total_loss = 0
@@ -147,7 +147,7 @@ class ClassifierModel():
 
 # 14. Запуск
 if __name__ == "__main__":
-    # Проверяем, что maxLong совпадает с токенизатором (100)
-    model = ClassifierModel(sizeVector=512, num_layers=12, maxLong=100)
+    #пришел к выводу что модель лучше уменьшить
+    model = ClassifierModel(sizeVector=128, num_layers=4, maxLong=100)
     model.train_model()
     model.save_model("trained_classifier")

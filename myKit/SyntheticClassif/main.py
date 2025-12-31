@@ -21,15 +21,11 @@ class SyntheticDataGenerator:
         self.data_manager = DataManager(config.output_filename)
         self.stats_manager = StatsManager()
         
-        # Сохраняем оригинальные темы из конфига
-        self.all_topics = config.topics.copy()
-        self.all_scenarios = config.scenarios.copy()
-        
         # Метки для классификации и их вероятности
         self.labels_with_weights = [
             ("positive", 0.4),   # 40% позитивных
             ("negative", 0.4),   # 40% негативных  
-            ("neutral", 0.4)     # 40% нейтральных
+            ("neutral", 0.2)     # 20% нейтральных (исправлено с 0.4 на 0.2 для суммы 1.0)
         ]
         
         # Создаем список меток в соответствии с вероятностями
@@ -38,13 +34,18 @@ class SyntheticDataGenerator:
             count = int(self.config.target_count * weight)
             self.labels_pool.extend([label] * count)
         
+        # Добиваем до нужного количества из-за округления
+        while len(self.labels_pool) < self.config.target_count:
+            random_label = random.choice(["positive", "negative", "neutral"])
+            self.labels_pool.append(random_label)
+        
         # Перемешиваем метки для случайного порядка
         random.shuffle(self.labels_pool)
         
         print(f"📊 Создан пул из {len(self.labels_pool)} меток:")
-        for label, _ in self.labels_with_weights:
+        for label, weight in self.labels_with_weights:
             count = self.labels_pool.count(label)
-            print(f"   {label}: {count} ({count/len(self.labels_pool)*100:.1f}%)")
+            print(f"   {label}: {count} ({count/len(self.labels_pool)*100:.1f}%) | Цель: {weight*100:.0f}%")
     
     def run(self):
         """Основной цикл генерации"""
@@ -67,12 +68,14 @@ class SyntheticDataGenerator:
             
         except Exception as e:
             print(f"\n💥 КРИТИЧЕСКАЯ ОШИБКА: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             self._emergency_protocol()
     
     def _run_random_generation(self):
         """Генерация со случайным чередованием меток"""
         print(f"\n{'='*60}")
-        print(f"🎰 ГЕНЕРАЦИЯ СО СЛУЧАЙНЫМ ЧЕРЕДОВАНИЕМ МЕТОК")
+        print(f"🎰 ГЕНЕРАЦИЯ РЕАЛИСТИЧНЫХ КОММЕНТАРИЕВ ИЗ СОЦСЕТЕЙ")
         print(f"{'='*60}\n")
         
         for i, label in enumerate(self.labels_pool):
@@ -122,6 +125,7 @@ class SyntheticDataGenerator:
                 formatted_example = self._format_to_target_schema(example)
                 if self.data_manager.add_example(formatted_example):
                     self.stats_manager.add_success()
+                    print(f"✅ Сгенерирован комментарий: {example.get('text', '')[:60]}...")
                 else:
                     self.stats_manager.add_failure()
                     print("❌ Не удалось сохранить пример")
@@ -141,7 +145,7 @@ class SyntheticDataGenerator:
         if random.random() > 0.7:  # 30% случаев даем реальный URL
             route_url = random.choice([
                 "https://random1",
-                "https://random2",
+                "https://random2", 
                 "https://random3",
                 "https://random4",
                 "https://random5"
@@ -159,14 +163,17 @@ class SyntheticDataGenerator:
     def _print_startup_info(self):
         """Выводит информацию о запуске"""
         print(f"\n{'='*60}")
-        print(f"🚀 ЗАПУСК ГЕНЕРАЦИИ СИНТЕТИЧЕСКИХ ДАННЫХ")
+        print(f"🚀 ЗАПУСК ГЕНЕРАЦИИ РЕАЛИСТИЧНЫХ КОММЕНТАРИЕВ")
         print(f"{'='*60}")
+        print(f"Тип данных:    Комментарии из соцсетей/YouTube")
         print(f"Цель:          {self.config.target_count} записей")
         print(f"Модель:        {self.config.model_name}")
         print(f"Файл:          {self.config.output_filename}")
         print(f"Формат:        text, label, route_url, page")
         print(f"Распределение: 40% positive, 40% negative, 20% neutral")
         print(f"Порядок:       Случайное чередование меток")
+        print(f"Платформы:     {', '.join(self.config.platforms[:3])}...")
+        print(f"Темы:          игры, мемы, кино, музыка, технологии и др.")
         print(f"Время старта:  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'='*60}\n")
         
@@ -219,11 +226,24 @@ class SyntheticDataGenerator:
         print(f"   Всего в файле:   {total_examples} записей")
         print(f"   Сгенерировано:   {self.stats_manager.stats['generated']} новых")
         print(f"   Было:            {total_examples - self.stats_manager.stats['generated']} старых")
+        
+        # Проверяем качество комментариев
+        short_comments = 0
+        slang_comments = 0
+        for example in existing_data[-50:]:  # Проверяем последние 50
+            text = example.get("text", "")
+            if len(text.split()) <= 15:
+                short_comments += 1
+            if any(word in text.lower() for word in ["огонь", "кринж", "чел", "имба", "зашло"]):
+                slang_comments += 1
+        
+        print(f"   Коротких (<15 слов): {short_comments}/50 ({short_comments/50*100:.0f}%)")
+        print(f"   Со сленгом:          {slang_comments}/50 ({slang_comments/50*100:.0f}%)")
         print(f"{'='*60}")
     
     def _emergency_protocol(self):
         """Протокол экстренной ситуации"""
-        print("Попытка сохранить последние данные...")
+        print("🆘 Попытка сохранить последние данные...")
         self.stats_manager.print_stats()
 
 
@@ -233,13 +253,13 @@ def main():
     config_dict = {
         "model_name": "ministral-3:latest",
         "ollama_url": "http://localhost:11434/api/generate",
-        "target_count": 100000, 
-        "delay_between_requests": 2.0,
-        "output_filename": "synthetic_classification_dataset.json",
-        "temperature": 0.6,
+        "target_count": 5000,  # Уменьшил с 100000 для теста
+        "delay_between_requests": 1.5,
+        "output_filename": "youtube_comments_dataset.json",
+        "temperature": 0.9,
         "top_p": 0.95,
-        "num_predict": 350,
-        "repeat_penalty": 1.2
+        "num_predict": 250,
+        "repeat_penalty": 1.1
     }
     
     config = Config.from_dict(config_dict)
