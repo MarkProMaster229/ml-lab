@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 class TokenizerForClassification():
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
-        self.ds = load_dataset("json", data_files="/home/chelovek/Загрузки/MydatasetT2_processed.json")
+        self.ds = load_dataset("json", data_files="/home/chelovek/Загрузки/combined_dataset_with_augmented_pairs.json")
         
         self.label_map = {
             "negative": 0,
