@@ -1,5 +1,6 @@
 #переделать!
-
+#вайб код за котороый мне стыдно, есть новая версия см в папке doTraing
+#конечно там тоже говно код, но хотя бы не так как тут(там я как кишки вырвал мусор))) )
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +9,7 @@ import json
 import os
 from transformers import AutoTokenizer
 
-# Архитектура ТОЧНО как у вас
+
 class TransformerBlock(nn.Module):
     def __init__(self, sizeVector=128, numHeads=4):
         super().__init__()

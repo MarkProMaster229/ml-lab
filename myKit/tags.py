@@ -20,7 +20,10 @@ chunks = []
 chunk_size = 1
 for i in range(0,len(datas), chunk_size):
     chunk = datas[i:i+chunk_size]
-    chunks.append(chunk)
+    chunks.extend(chunk)
+
+
+
 
 dataset = []
 for chunk in chunks:
@@ -34,6 +37,17 @@ for chunk in chunks:
 
 with open("output.json", "w", encoding="utf-8") as f:
     json.dump(dataset, f, ensure_ascii=False, indent=4)
+
+
+datas = [i['target'] for i in data]
+#print(datas)
+print(len(datas))
+
+chunks = []
+chunk_size = 1
+for i in range(0,len(datas), chunk_size):
+    chunk = datas[i:i+chunk_size]
+    chunks.extend(chunk)
 
 
 datas = [i['target'] for i in data]
