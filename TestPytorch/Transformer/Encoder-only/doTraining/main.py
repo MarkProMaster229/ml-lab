@@ -5,15 +5,8 @@ from torch.utils.data import DataLoader, Dataset
 import json
 import os
 from transformers import AutoTokenizer
-import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torchvision import transforms
-from transformers import AutoTokenizer
 from datasets import load_dataset
-import torch
-from torch.utils.data import DataLoader
+import random
 
 class TransformerBlock(nn.Module):
     def __init__(self, sizeVector=128, numHeads=4):
@@ -66,7 +59,7 @@ class TransformerRun(nn.Module):
 class TokenizerForClassification():
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
-        self.ds = load_dataset("json", data_files="/home/chelovek/Загрузки/combined_dataset_with_augmented_pairs.json")
+        self.ds = load_dataset("json", data_files="/home/chelovek/Документы/work/output_balanced.json")
         
         self.label_map = {
             "negative": 0,
@@ -117,12 +110,33 @@ class TokenizerForClassification():
             shuffle=True
         )
         return train_loader
+
+def save_model(model, tokenizer, config, output_dir, label_map=None):
+    os.makedirs(output_dir, exist_ok=True)
     
+    torch.save(model.state_dict(), os.path.join(output_dir, 'model_weights.pth'))
+    
+    full_config = {
+        'vocabSize': config['vocabSize'],
+        'maxLong': config['maxLong'],
+        'sizeVector': config['sizeVector'],
+        'numLayers': config['numLayers'],
+        'numHeads': 8,
+        'numClasses': 3,
+    }
+    torch.save(full_config, os.path.join(output_dir, 'config.pth'))
+    
+    if hasattr(tokenizer, 'save_pretrained'):
+        tokenizer.save_pretrained(output_dir)
+
+    if label_map is not None:
+        with open(os.path.join(output_dir, 'label_map.json'), 'w', encoding='utf-8') as f:
+            json.dump(label_map, f, ensure_ascii=False, indent=2)
 
 def finetune_with_json():
     
-    model_dir = '/home/chelovek/Документы/work/classifier_epoch70'
-    data_path = '/home/chelovek/Загрузки/en_ru/synthetic_classification_dataset(1).json'
+    model_dir = '/home/chelovek/Документы/work/classifier2'
+    data_path = '/home/chelovek/Документы/work/output_balanced.json'
     #this configuration 
     config_path = os.path.join(model_dir, 'config.pth')
     config = torch.load(config_path, map_location='cpu')
@@ -147,7 +161,7 @@ def finetune_with_json():
             self.data = data
             self.tokenizer = tokenizer
             self.max_length = max_length
-            self.label_map = {'positive': 0, 'negative': 1, 'neutral': 2}
+            self.label_map = {'POSITIVE': 0, 'NEGATIVE': 1, 'NEUTRAL': 2}
             
         
         def __len__(self):
@@ -172,7 +186,6 @@ def finetune_with_json():
             }
     
 
-    import random
     random.shuffle(all_data)
     split_idx = int(len(all_data) * 0.8)
     train_data = all_data[:split_idx]
@@ -191,7 +204,7 @@ def finetune_with_json():
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     criterion = nn.CrossEntropyLoss()
 
-    num_epochs = 12
+    num_epochs = 5
 
     for epoch in range(num_epochs):
         model.train()
@@ -240,13 +253,14 @@ def finetune_with_json():
         print(f"  Val - Loss: {val_loss/len(val_loader):.4f}, Acc: {val_acc:.2f}%")
 
 
-    output_dir = '/home/chelovek/Документы/work/classifier'
-    os.makedirs(output_dir, exist_ok=True)
-    torch.save(model.state_dict(), os.path.join(output_dir, 'model_weights.pth'))
-    torch.save(config, os.path.join(output_dir, 'config.pth'))
-
-    if hasattr(tokenizer, 'save_pretrained'):
-        tokenizer.save_pretrained(output_dir)
+    output_dir = '/home/chelovek/Документы/work/classifier777'
+    save_model(
+        model=model,
+        tokenizer=tokenizer,
+        config=config,
+        output_dir=output_dir,
+        label_map={'POSITIVE': 0, 'NEGATIVE': 1, 'NEUTRAL': 2}
+    )
 
 if __name__ == "__main__":
     finetune_with_json()
