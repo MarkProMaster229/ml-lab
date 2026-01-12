@@ -80,8 +80,8 @@ def create_simple_tokenizer(model_dir, vocab_size):
 
 def finetune_with_json():
     # ПУТИ
-    model_dir = '/home/chelovek/Документы/work/classifier_epoch70'
-    data_path = '/home/chelovek/Загрузки/en_ru/synthetic_classification_dataset(1).json'
+    model_dir = '/home/chelovek/Документы/work/classifier7772finalycut'
+    data_path = '/home/chelovek/Рабочий стол/telegramParsClass.json'
     
     print(f"Модель: {model_dir}")
     print(f"Данные: {data_path}")
@@ -95,7 +95,6 @@ def finetune_with_json():
     print(f"  maxLong: {config['maxLong']}")
     print(f"  sizeVector: {config['sizeVector']}")
     print(f"  numLayers: {config['numLayers']}")
-    print(f"  num_classes: {config['num_classes']}")
     
     # 2. Загружаем веса модели
     weights_path = os.path.join(model_dir, 'model_weights.pth')
@@ -220,7 +219,7 @@ def finetune_with_json():
     criterion = nn.CrossEntropyLoss()
     
     # 11. Дообучение
-    num_epochs = 12
+    num_epochs = 5
     
     print("\n" + "="*50)
     print("НАЧИНАЮ ДООБУЧЕНИЕ")
@@ -280,7 +279,7 @@ def finetune_with_json():
         print("-" * 50)
     
     # 12. Сохраняем дообученную модель
-    output_dir = '/home/chelovek/Документы/work/classifier_finetuned'
+    output_dir = '/home/chelovek/Документы/work/classifier_finetunedTEST'
     os.makedirs(output_dir, exist_ok=True)
     
     # Сохраняем веса

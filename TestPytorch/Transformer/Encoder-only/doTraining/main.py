@@ -13,20 +13,30 @@ class TransformerBlock(nn.Module):
         super().__init__()
         self.ln1 = nn.LayerNorm(sizeVector)
         self.attn = nn.MultiheadAttention(sizeVector, numHeads, batch_first=True)
+        self.dropout_attn = nn.Dropout(0.1)
         self.ln2 = nn.LayerNorm(sizeVector)
         self.ff = nn.Sequential(
             nn.Linear(sizeVector, sizeVector*4),
             nn.GELU(),
             nn.Linear(sizeVector*4, sizeVector)
         )
+        self.dropout_ff = nn.Dropout(0.1)
     
-    def forward(self, x, key_padding_mask=None):
+    def forward(self, x, attention_mask=None):
+        if attention_mask is not None:
+            key_padding_mask = ~attention_mask.bool()
+        else:
+            key_padding_mask = None
         h = self.ln1(x)
         attn_out, _ = self.attn(h, h, h, key_padding_mask=key_padding_mask)
+        attn_out = self.dropout_attn(attn_out)
         x = x + attn_out
         h = self.ln2(x)
-        x = x + self.ff(h)
+        ff_out = self.ff(h)
+        ff_out = self.dropout_ff(ff_out)
+        x = x + ff_out
         return x
+
 
 class TransformerRun(nn.Module):
     def __init__(self, vocabSize=120000, maxLong=100, sizeVector=128, block=4):
@@ -40,7 +50,7 @@ class TransformerRun(nn.Module):
         ])
         self.lmHead = nn.Linear(sizeVector, 3)
     
-    def forward(self, x):
+    def forward(self, x, attention_mask=None):
         B, T = x.shape
         tok = self.Vectorization(x)
         positions = torch.arange(T, device=x.device).unsqueeze(0).expand(B, T)
@@ -48,8 +58,8 @@ class TransformerRun(nn.Module):
         h = tok + pos
         
         for layer in self.layers:
-            h = layer(h)
-        
+            h = layer(h, attention_mask=attention_mask)
+            
         cls = h.mean(dim=1)
         logits = self.lmHead(cls)
         return logits
@@ -59,12 +69,12 @@ class TransformerRun(nn.Module):
 class TokenizerForClassification():
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
-        self.ds = load_dataset("json", data_files="/home/chelovek/Документы/work/output_balanced.json")
+        self.ds = load_dataset("json", data_files="/home/chelovek/Рабочий стол/telegramParsClass.json")
         
         self.label_map = {
-            "negative": 0,
-            "positive": 1,
-            "neutral": 2
+            "positive":0, 
+            "negative":1, 
+            "neutral":2
         }
     
     def tokenize(self, examples):
@@ -135,8 +145,8 @@ def save_model(model, tokenizer, config, output_dir, label_map=None):
 
 def finetune_with_json():
     
-    model_dir = '/home/chelovek/Документы/work/classifier2'
-    data_path = '/home/chelovek/Документы/work/output_balanced.json'
+    model_dir = '/home/chelovek/Документы/work/classifier7772finalycut'
+    data_path = '/home/chelovek/Рабочий стол/telegramParsClass.json'
     #this configuration 
     config_path = os.path.join(model_dir, 'config.pth')
     config = torch.load(config_path, map_location='cpu')
@@ -172,18 +182,24 @@ def finetune_with_json():
             text = item['text']
             label_str = item['label']
 
-            tokens = tokenizer.encode(text)
-            tokens = tokens[:self.max_length]
-            if len(tokens) < self.max_length:
-                tokens = tokens + [0] * (self.max_length - len(tokens))
-            input_ids = torch.tensor(tokens, dtype=torch.long).unsqueeze(0)
-            
-            label = self.label_map.get(label_str, 2) 
+            tokens = tokenizer(
+                text,
+                truncation=True,
+                padding="max_length",
+                max_length=self.max_length,
+                return_tensors="pt"
+                )
+            input_ids = tokens['input_ids'].squeeze(0)
+            attention_mask = tokens['attention_mask'].squeeze(0)
+
+            label = self.label_map.get(label_str.upper(), 2)
 
             return {
-                'input_ids': input_ids.squeeze(0),
+                'input_ids': input_ids,
+                'attention_mask': attention_mask,
                 'labels': torch.tensor(label, dtype=torch.long)
-            }
+                }
+
     
 
     random.shuffle(all_data)
@@ -194,8 +210,8 @@ def finetune_with_json():
     train_dataset = JSONDataset(train_data, tokenizer, max_length=config['maxLong'])
     val_dataset = JSONDataset(val_data, tokenizer, max_length=config['maxLong'])
 
-    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\ndevice: {device}")
@@ -217,7 +233,9 @@ def finetune_with_json():
             labels = batch['labels'].to(device)
             
             optimizer.zero_grad()
-            outputs = model(input_ids)
+            attention_mask = batch['attention_mask'].to(device)
+            outputs = model(input_ids, attention_mask=attention_mask)
+
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -238,7 +256,8 @@ def finetune_with_json():
                 input_ids = batch['input_ids'].to(device)
                 labels = batch['labels'].to(device)
                 
-                outputs = model(input_ids)
+                attention_mask = batch['attention_mask'].to(device)
+                outputs = model(input_ids, attention_mask=attention_mask)
                 loss = criterion(outputs, labels)
                 val_loss += loss.item()
                 
@@ -253,13 +272,13 @@ def finetune_with_json():
         print(f"  Val - Loss: {val_loss/len(val_loader):.4f}, Acc: {val_acc:.2f}%")
 
 
-    output_dir = '/home/chelovek/Документы/work/classifier777'
+    output_dir = '/home/chelovek/Документы/work/classifier7772finalycut234444'
     save_model(
         model=model,
         tokenizer=tokenizer,
         config=config,
         output_dir=output_dir,
-        label_map={'POSITIVE': 0, 'NEGATIVE': 1, 'NEUTRAL': 2}
+        label_map={'positive': 0, 'negative': 1, 'neutral': 2}
     )
 
 if __name__ == "__main__":
