@@ -1,8 +1,8 @@
 import re
 import json
 
-INPUT = "/home/chelovek/Загрузки/ttelegram/two/result.json"
-OUTPUT = "texts2.json"
+INPUT = "/home/chelovek/Загрузки/1234567/2ch_all_posts.json"
+OUTPUT = "texts2222_2ch.json"
 
 with open(INPUT, "r", encoding="utf-8", errors="ignore") as f:
     raw = f.read()
@@ -10,8 +10,11 @@ with open(INPUT, "r", encoding="utf-8", errors="ignore") as f:
 pattern = r'"text"\s*:\s*"([^"]+)"'
 texts = re.findall(pattern, raw)
 
-
-cleaned = [t.replace('\n', ' ').replace('\r', ' ').strip() for t in texts if t.strip()]
+cleaned = []
+for t in texts:
+    t = t.replace('\n', ' ').replace('\r', ' ').strip()
+    if t and len(t) <= 130:
+        cleaned.append(t)
 
 seen = set()
 unique = []

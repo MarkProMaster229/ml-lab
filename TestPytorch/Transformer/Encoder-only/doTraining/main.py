@@ -9,60 +9,57 @@ from datasets import load_dataset
 import random
 
 class TransformerBlock(nn.Module):
-    def __init__(self, sizeVector=128, numHeads=4):
+    def __init__(self, sizeVector=256, numHeads=8, dropout=0.1):
         super().__init__()
         self.ln1 = nn.LayerNorm(sizeVector)
         self.attn = nn.MultiheadAttention(sizeVector, numHeads, batch_first=True)
-        self.dropout_attn = nn.Dropout(0.1)
+        self.dropout_attn = nn.Dropout(dropout)
         self.ln2 = nn.LayerNorm(sizeVector)
         self.ff = nn.Sequential(
             nn.Linear(sizeVector, sizeVector*4),
             nn.GELU(),
-            nn.Linear(sizeVector*4, sizeVector)
+            nn.Linear(sizeVector*4, sizeVector),
+            nn.Dropout(dropout)
         )
-        self.dropout_ff = nn.Dropout(0.1)
     
     def forward(self, x, attention_mask=None):
-        if attention_mask is not None:
-            key_padding_mask = ~attention_mask.bool()
-        else:
-            key_padding_mask = None
+        key_padding_mask = ~attention_mask.bool() if attention_mask is not None else None
         h = self.ln1(x)
         attn_out, _ = self.attn(h, h, h, key_padding_mask=key_padding_mask)
-        attn_out = self.dropout_attn(attn_out)
-        x = x + attn_out
-        h = self.ln2(x)
-        ff_out = self.ff(h)
-        ff_out = self.dropout_ff(ff_out)
-        x = x + ff_out
+        x = x + self.dropout_attn(attn_out)
+        x = x + self.ff(self.ln2(x))
         return x
 
 
 class TransformerRun(nn.Module):
-    def __init__(self, vocabSize=120000, maxLong=100, sizeVector=128, block=4):
+    def __init__(self, vocabSize=120000, maxLen=100, sizeVector=256, numBlocks=4, numHeads=8, numClasses=3, dropout=0.1):
         super().__init__()
-        self.maxLong = maxLong 
-        self.Vectorization = nn.Embedding(vocabSize, sizeVector)
-        self.posEmbed = nn.Embedding(maxLong, sizeVector)
+        self.token_emb = nn.Embedding(vocabSize, sizeVector)
+        self.pos_emb = nn.Embedding(maxLen, sizeVector)
         self.layers = nn.ModuleList([
-            TransformerBlock(sizeVector=sizeVector, numHeads=8)
-            for _ in range(block)
+            TransformerBlock(sizeVector=sizeVector, numHeads=numHeads, dropout=dropout)
+            for _ in range(numBlocks)
         ])
-        self.lmHead = nn.Linear(sizeVector, 3)
-    
+        self.dropout = nn.Dropout(dropout)
+        self.ln = nn.LayerNorm(sizeVector*2)
+        self.classifier = nn.Linear(sizeVector*2, numClasses)
+
     def forward(self, x, attention_mask=None):
         B, T = x.shape
-        tok = self.Vectorization(x)
-        positions = torch.arange(T, device=x.device).unsqueeze(0).expand(B, T)
-        pos = self.posEmbed(positions)
+        tok = self.token_emb(x)
+        pos = self.pos_emb(torch.arange(T, device=x.device).unsqueeze(0).expand(B, T))
         h = tok + pos
-        
+
         for layer in self.layers:
-            h = layer(h, attention_mask=attention_mask)
-            
-        cls = h.mean(dim=1)
-        logits = self.lmHead(cls)
+            h = layer(h, attention_mask)
+
+        cls_token = h[:,0,:]   # CLS
+        mean_pool = h.mean(dim=1)
+        combined = torch.cat([cls_token, mean_pool], dim=1)
+        combined = self.ln(self.dropout(combined))
+        logits = self.classifier(combined)
         return logits
+
     
 
 
@@ -145,7 +142,7 @@ def save_model(model, tokenizer, config, output_dir, label_map=None):
 
 def finetune_with_json():
     
-    model_dir = '/home/chelovek/Документы/work/classifier7772finalycut'
+    model_dir = '/home/chelovek/Документы/work/classifier7772finalycutBIIIGBOOOOS'
     data_path = '/home/chelovek/Рабочий стол/telegramParsClass.json'
     #this configuration 
     config_path = os.path.join(model_dir, 'config.pth')
@@ -155,11 +152,12 @@ def finetune_with_json():
     weights = torch.load(weights_path, map_location='cpu')
     
     model = TransformerRun(
-        vocabSize=config['vocabSize'],
-        maxLong=config['maxLong'],
-        sizeVector=config['sizeVector'],
-        block=config['numLayers']
-    )
+    vocabSize=config['vocabSize'],
+    maxLen=config['maxLong'],
+    sizeVector=config['sizeVector'],
+    numBlocks=config['numLayers']
+)
+
     model.load_state_dict(weights)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
     with open(data_path, 'r', encoding='utf-8') as f:
@@ -217,10 +215,10 @@ def finetune_with_json():
     print(f"\ndevice: {device}")
     model = model.to(device)
 
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = optim.Adam(model.parameters(), lr=5e-5)
     criterion = nn.CrossEntropyLoss()
 
-    num_epochs = 5
+    num_epochs = 3
 
     for epoch in range(num_epochs):
         model.train()
@@ -272,7 +270,7 @@ def finetune_with_json():
         print(f"  Val - Loss: {val_loss/len(val_loader):.4f}, Acc: {val_acc:.2f}%")
 
 
-    output_dir = '/home/chelovek/Документы/work/classifier7772finalycut234444'
+    output_dir = '/home/chelovek/Документы/work/classifier7772finalycutBIIIGBOOOOS2'
     save_model(
         model=model,
         tokenizer=tokenizer,

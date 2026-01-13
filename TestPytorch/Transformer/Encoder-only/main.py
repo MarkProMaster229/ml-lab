@@ -17,11 +17,13 @@ class ClassifierModel():
 
         # 2. МОДЕЛЬ - отдельно
         self.model = TransformerRun(
-            vocabSize=self.vocabSize,
-            maxLong=self.maxLong,
-            sizeVector=sizeVector,
-            block=num_layers
-        ).to(self.device)
+    vocabSize=self.vocabSize,
+    maxLen=self.maxLong,
+    sizeVector=self.sizeVector,
+    numBlocks=self.num_layers
+).to(self.device)
+
+
         
         print(f"Классификация на")
         print(f"Размер словаря: {self.vocabSize}")
@@ -34,7 +36,7 @@ class ClassifierModel():
     def train_model(self):
         #no using ai!
         dataloader = self.tokenizer.dataloader()
-        numEpoch = 70
+        numEpoch = 1
 
         for epoch in range(numEpoch):
             print(f"Эпоха {epoch+1}/{numEpoch}")
@@ -116,7 +118,7 @@ class ClassifierModel():
             
             return predicted_class, label_name, outputs.softmax(dim=1)
     #not ai 
-    def save_model(self, path="my_classifier"):
+    def save_model(self, path="my_classifier2222"):
         import os
         os.makedirs(path, exist_ok=True)
         
@@ -148,6 +150,6 @@ class ClassifierModel():
 # 14. Запуск
 if __name__ == "__main__":
     #пришел к выводу что модель лучше уменьшить
-    model = ClassifierModel(sizeVector=128, num_layers=4, maxLong=100)
+    model = ClassifierModel(sizeVector=256, num_layers=4)
     model.train_model()
-    model.save_model("trained_classifier")
+    model.save_model("trained_classifier2222222")
