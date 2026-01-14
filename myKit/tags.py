@@ -219,3 +219,67 @@ with open("output2.json", "w", encoding="utf-8") as f:
 #files.download(output_path)
 #
 #print("done")
+
+# from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
+# from datasets import Dataset
+# import torch
+# import json
+# import pandas as pd
+# from tqdm import tqdm
+
+# # --- Модель ---
+# model_name = "yangheng/deberta-v3-large-absa-v1.1"
+
+# model = AutoModelForSequenceClassification.from_pretrained(
+#     model_name,
+#     trust_remote_code=True,
+#     device_map="auto",   # распределение по GPU/CPU через accelerate
+#     torch_dtype=torch.float16  # fp16 для экономии VRAM
+# )
+
+# tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+
+# # --- Pipeline классификации ---
+# sentiment = pipeline(
+#     "text-classification",
+#     model=model,
+#     tokenizer=tokenizer,
+#     truncation=True,
+#     max_length=512
+# )
+
+# # --- Загружаем JSON ---
+# with open("/home/chelovek/Видео/3/Toxic_part1.json", "r", encoding="utf-8") as f:
+#     data = json.load(f)
+
+# texts = [i['text'] for i in data]
+# print(f"Всего текстов: {len(texts)}")
+
+# dataset = Dataset.from_dict({"text": texts})
+
+# # --- Классификация батчами ---
+# def classify_batch(batch):
+#     results = sentiment(batch["text"])
+#     return {
+#         "label": [res['label'] for res in results],   # 'Negative', 'Neutral', 'Positive'
+#         "score": [res['score'] for res in results]
+#     }
+
+# dataset = dataset.map(
+#     classify_batch,
+#     batched=True,
+#     batch_size=136,
+#     desc="Прогон на GPU"
+# )
+
+# # --- Сохраняем в JSON ---
+# output_path = "outputToxic_debertaTEst1.json"
+# df = dataset.to_pandas()
+# df.to_json(
+#     output_path,
+#     orient="records",
+#     force_ascii=False,
+#     indent=4
+# )
+
+# print("done, файл готов!")
