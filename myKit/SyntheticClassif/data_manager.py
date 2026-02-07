@@ -59,7 +59,7 @@ class DataManager:
         existing_data = self.load_existing_data()
         
         # Проверка на дубликаты (последние 100)
-        for existing in existing_data[-100:]:
+        for existing in existing_data[-10000:]:
             if existing.get("text", "") == example.get("text", ""):
                 print(f"⚠️ Возможный дубликат, пропускаю")
                 return False

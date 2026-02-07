@@ -9,7 +9,7 @@ from datasets import load_dataset
 import random
 
 class TransformerBlock(nn.Module):
-    def __init__(self, sizeVector=256, numHeads=8, dropout=0.1):
+    def __init__(self, sizeVector=256, numHeads=8, dropout=0.5):
         super().__init__()
         self.ln1 = nn.LayerNorm(sizeVector)
         self.attn = nn.MultiheadAttention(sizeVector, numHeads, batch_first=True)
@@ -32,7 +32,7 @@ class TransformerBlock(nn.Module):
 
 
 class TransformerRun(nn.Module):
-    def __init__(self, vocabSize=120000, maxLen=100, sizeVector=256, numBlocks=4, numHeads=8, numClasses=3, dropout=0.1):
+    def __init__(self, vocabSize=120000, maxLen=100, sizeVector=256, numBlocks=4, numHeads=8, numClasses=3, dropout=0.5):
         super().__init__()
         self.token_emb = nn.Embedding(vocabSize, sizeVector)
         self.pos_emb = nn.Embedding(maxLen, sizeVector)
@@ -142,8 +142,8 @@ def save_model(model, tokenizer, config, output_dir, label_map=None):
 
 def finetune_with_json():
     
-    model_dir = '/home/chelovek/Документы/work/classifier7772finalycutBIIIGBOOOOS'
-    data_path = '/home/chelovek/Рабочий стол/telegramParsClass.json'
+    model_dir = '/home/chelovek/Downloads/modelClass/'
+    data_path = '/home/chelovek/work/balanced_output00000.json'
     #this configuration 
     config_path = os.path.join(model_dir, 'config.pth')
     config = torch.load(config_path, map_location='cpu')
@@ -218,7 +218,7 @@ def finetune_with_json():
     optimizer = optim.Adam(model.parameters(), lr=5e-5)
     criterion = nn.CrossEntropyLoss()
 
-    num_epochs = 3
+    num_epochs = 2
 
     for epoch in range(num_epochs):
         model.train()
@@ -270,7 +270,7 @@ def finetune_with_json():
         print(f"  Val - Loss: {val_loss/len(val_loader):.4f}, Acc: {val_acc:.2f}%")
 
 
-    output_dir = '/home/chelovek/Документы/work/classifier7772finalycutBIIIGBOOOOS2'
+    output_dir = '/home/chelovek/Документы/work/classifier7772finalycutBIIIGBOOOOS299'
     save_model(
         model=model,
         tokenizer=tokenizer,

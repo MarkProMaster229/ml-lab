@@ -20,50 +20,10 @@ class PromptGenerator:
 
 Ты всегда возвращаешь ТОЛЬКО JSON объект с одним полем 'label'."""
 
-        # Примеры для обучения модели
-        self.examples = {
-            "positive": [
-                "Классное видео, спасибо автору!",
-                "Супер, мне понравилось",
-                "Очень полезно, беру на заметку",
-                "Лучшее что я видел за последнее время",
-                "Автор молодец, так держать"
-            ],
-            "negative": [
-                "Полный бред, не советую смотреть",
-                "Автор вообще в теме?",
-                "Скучно и неинтересно",
-                "Зря потратил время",
-                "Это просто ужасно"
-            ],
-            "neutral": [
-                "А можно подробнее про третий пункт?",
-                "Сколько времени ушло на съемку?",
-                "Как называется программа которую вы используете?",
-                "Где можно найти ссылку на статью?",
-                "Какая версия игры используется в видео?"
-            ]
-        }
-    
     def generate_classification_prompt(self, comment: str) -> str:
         """Генерирует промпт для классификации одного комментария"""
         
-        # Выбираем по 2 примера каждого типа для контекста
-        pos_examples = random.sample(self.examples["positive"], 2)
-        neg_examples = random.sample(self.examples["negative"], 2)
-        neu_examples = random.sample(self.examples["neutral"], 2)
-        
         prompt = f"""{self.system_prompt}
-
-КОНТЕКСТНЫЕ ПРИМЕРЫ:
-Позитивные (positive):
-{chr(10).join(f'• "{example}"' for example in pos_examples)}
-
-Негативные (negative):
-{chr(10).join(f'• "{example}"' for example in neg_examples)}
-
-Нейтральные (neutral):
-{chr(10).join(f'• "{example}"' for example in neu_examples)}
 
 АНАЛИЗИРУЙ КОММЕНТАРИЙ:
 "{comment}"

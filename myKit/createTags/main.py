@@ -169,11 +169,11 @@ def main():
     """Точка входа"""
     # Конфигурация
     config_dict = {
-        "model_name": "ministral-3:latest",
+        "model_name": "devstral-2:123b-cloud",
         "ollama_url": "http://localhost:11434/api/generate",
         "delay_between_requests": 1.5,
-        "input_filename": "/home/chelovek/Загрузки/1234567/Toxic(1).json",
-        "output_filename": "classified_commentsFinalyCut.json",
+        "input_filename": "/home/chelovek/work/PositiveComment.json",
+        "output_filename": "classified_commentsPosiriveOwO.json",
         "temperature": 0.2,
         "top_p": 0.9,
         "num_predict": 50,

@@ -1,8 +1,8 @@
 import re
 import json
 
-INPUT = "/home/chelovek/Загрузки/1234567/2ch_all_posts.json"
-OUTPUT = "texts2222_2ch.json"
+INPUT = "/home/chelovek/pars/2/result.json"
+OUTPUT = "aviasales.json"
 
 with open(INPUT, "r", encoding="utf-8", errors="ignore") as f:
     raw = f.read()
@@ -13,7 +13,7 @@ texts = re.findall(pattern, raw)
 cleaned = []
 for t in texts:
     t = t.replace('\n', ' ').replace('\r', ' ').strip()
-    if t and len(t) <= 130:
+    if t and 5 <= len(t) <= 130:
         cleaned.append(t)
 
 seen = set()

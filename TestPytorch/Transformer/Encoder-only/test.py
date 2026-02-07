@@ -240,7 +240,7 @@ def interactive_test(model_tester):
 # 4. Запуск тестирования
 if __name__ == "__main__":
     # Укажи правильный путь к сохраненной модели
-    model_path = "/home/chelovek/Документы/work/classifier7772finalycut234444"
+    model_path = "/home/chelovek/Документы/work/classifier7772finalycutBIIIGBOOOOS299"
     
     try:
         # Создаем тестер

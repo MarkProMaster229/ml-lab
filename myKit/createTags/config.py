@@ -7,7 +7,7 @@ import random
 @dataclass
 class Config:
     """Конфигурация классификатора комментариев"""
-    model_name: str = "ministral-3:latest"
+    model_name: str = "devstral-2:123b"
     ollama_url: str = "http://localhost:11434/api/generate"
     delay_between_requests: float = 1.5
     
