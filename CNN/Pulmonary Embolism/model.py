@@ -210,7 +210,7 @@ criterion = CombinedLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 train_loader, val_loader = get_dataloaders(batch_size=3)
 
-ColVo_epoch = 10
+ColVo_epoch = 6
 
 for epoch in range(ColVo_epoch):
     model.train()
@@ -263,5 +263,8 @@ for epoch in range(ColVo_epoch):
             val_loss += v_loss.item()
             
     print(f"Валидация: Средняя ошибка: {val_loss / len(val_loader):.4f}")
+
+    torch.save(model.state_dict(), f'cnn_model_epoch_{epoch+1}.pth')
+    print(f"Модель сохранена: cnn_model_epoch_{epoch+1}.pth")
 
 

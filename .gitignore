@@ -41,3 +41,5 @@ myKit/createTags/__pycache__/validator.cpython-310.pyc
 myKit/createTags/classified_commentsFinalyCut4445.json
 myKit/createTags/classified_commentsPosiriveOwO.json
 CNN/Pulmonary Embolism/__pycache__/DataLouder.cpython-310.pyc
+CNN/Pulmonary Embolism/__pycache__/model.cpython-310.pyc
+CNN/Pulmonary Embolism/Attention U-Net/__pycache__/DataLouder.cpython-310.pyc
