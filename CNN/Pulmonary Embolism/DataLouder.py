@@ -40,27 +40,28 @@ class DataLouder(Dataset):
         
         return full_input, target_tensor
 
-
-def create_full_dataset():
+def create_full_dataset(base_ct_dir, base_mask_dir):
     all_datasets = []
-    base_ct_dir = '/home/chelovek/BigWork/data/archive/FUMPE/CT_scans'
-    base_mask_dir = '/home/chelovek/BigWork/data/archive/FUMPE/GroundTruth'
-    
-    # Собираем всех доступных пациентов
     patient_ids = sorted([d for d in os.listdir(base_ct_dir) if d.startswith('PAT')])
-    
     for pat_id in patient_ids:
         dcm_path = os.path.join(base_ct_dir, pat_id)
         mat_file = os.path.join(base_mask_dir, f"{pat_id}.mat")
-        
         if os.path.exists(mat_file):
-            patient_ds = DataLouder(dcm_dir=dcm_path, mat_path=mat_file, n_slices=6)
-            all_datasets.append(patient_ds)
-            print(f"Загружен {pat_id}: {len(patient_ds)} окон")
-            
+            all_datasets.append(DataLouder(dcm_dir=dcm_path, mat_path=mat_file))
     return ConcatDataset(all_datasets)
 
-full_dataset = create_full_dataset()
-dataloader = DataLoader(full_dataset, batch_size=1, shuffle=True, num_workers=4)
 
-print(f"\nИТОГО доступных окон для обучения: {len(full_dataset)}")
+def get_dataloaders(batch_size=1):
+    train_ds = create_full_dataset(
+        '/home/chelovek/BigWork/data/FUMPE/CT_scans',
+        '/home/chelovek/BigWork/data/FUMPE/GroundTruth'
+    )
+    val_ds = create_full_dataset(
+        '//home/chelovek/Рабочий стол/valid/FUMPE/CT_scans/',
+        '/home/chelovek/Рабочий стол/valid/FUMPE/GroundTruth/'
+    )
+    
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
+    
+    return train_loader, val_loader

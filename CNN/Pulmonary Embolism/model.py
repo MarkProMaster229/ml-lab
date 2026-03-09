@@ -8,7 +8,7 @@ from torchvision import transforms
 #delete
 import os
 from DataLouder import DataLoader
-from DataLouder import create_full_dataset
+from DataLouder import get_dataloaders
 SAVE_DIR = "saved_images"
 os.makedirs(SAVE_DIR, exist_ok=True)
 #delete
@@ -208,8 +208,7 @@ model = CNNModel().to(device)
 
 criterion = CombinedLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-datalouderChankCut = create_full_dataset()
-dataloader = DataLoader(datalouderChankCut, batch_size=3, shuffle=True)
+train_loader, val_loader = get_dataloaders(batch_size=3)
 
 ColVo_epoch = 10
 
@@ -217,7 +216,7 @@ for epoch in range(ColVo_epoch):
     model.train()
     epoch_loss = 0.0
 
-    for i,(images, masks) in enumerate(dataloader):
+    for i,(images, masks) in enumerate(train_loader):
         images = images.to(device)
         masks = masks.to(device)
 
@@ -237,22 +236,32 @@ for epoch in range(ColVo_epoch):
             #print(f"Количество батчей в эпохе: {len(dataloader)}")
 
 
-        if epoch >= 2 and i % 100 == 0 and masks.sum() > 0: 
-            with torch.no_grad():
-                pred_map = torch.sigmoid(outputs[0, 0]).cpu().numpy()
-                true_mask = masks[0, 0].cpu().numpy()
-                
-                original_img = images[0, 0].cpu().numpy()
-                
-            fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-            ax[0].imshow(original_img, cmap='bone')
-            ax[1].imshow(true_mask, cmap='gray') 
-            ax[1].set_title(f"Mask (Пикселей: {true_mask.sum()})")
-            ax[2].imshow(pred_map, cmap='jet')
-            ax[2].set_title("Prediction Probability")
-            plt.show()
+        #if epoch >= 2 and i % 100 == 0 and masks.sum() > 0: 
+        #    with torch.no_grad():
+        #        pred_map = torch.sigmoid(outputs[0, 0]).cpu().numpy()
+        #        true_mask = masks[0, 0].cpu().numpy()
+        #        
+        #        original_img = images[0, 0].cpu().numpy()
+        #        
+        #    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+        #    ax[0].imshow(original_img, cmap='bone')
+        #    ax[1].imshow(true_mask, cmap='gray') 
+        #    ax[1].set_title(f"Mask (Пикселей: {true_mask.sum()})")
+        #    ax[2].imshow(pred_map, cmap='jet')
+        #    ax[2].set_title("Prediction Probability")
+        #    plt.show()
 
-    avg_loss = epoch_loss / len(dataloader)
+    avg_loss = epoch_loss / len(train_loader)
     print(f"Эпоха [{epoch+1}/{ColVo_epoch}], Средняя ошибка: {avg_loss:.4f}")
+    model.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for val_images, val_masks in val_loader:
+            val_images, val_masks = val_images.to(device), val_masks.to(device)
+            val_outputs = model(val_images)
+            v_loss = criterion(val_outputs, val_masks)
+            val_loss += v_loss.item()
+            
+    print(f"Валидация: Средняя ошибка: {val_loss / len(val_loader):.4f}")
 
 
