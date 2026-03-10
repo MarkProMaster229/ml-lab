@@ -47,6 +47,7 @@ class FontLetterDataset(Dataset):
         self.transform = transforms.Compose([
             transforms.Resize((self.img_size, self.img_size)),
             transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))
         ])
         print(f"🖼️  Трансформации: resize -> {self.img_size}x{self.img_size}, to tensor")
 
