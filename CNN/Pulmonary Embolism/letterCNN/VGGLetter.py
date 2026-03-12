@@ -198,3 +198,39 @@ for epoch in range(num_epochs):
     val_accuracies.append(epoch_val_acc)
     
     print(f"Epoch {epoch+1:2d} | Train Loss: {epoch_train_loss:.4f} | Val Loss: {epoch_val_loss:.4f} | Val Acc: {epoch_val_acc:.2f}%")
+    torch.save(model.state_dict(), f'cnn_model_epoch_{epoch+1}.pth')
+    print(f"Модель сохранена: cnn_model_epoch_{epoch+1}.pth")
+
+
+
+
+#Epoch  1 | Train Loss: 0.9854 | Val Loss: 0.4562 | Val Acc: 86.99%
+#Модель сохранена: cnn_model_epoch_1.pth
+#Epoch  2 | Train Loss: 0.4000 | Val Loss: 0.4152 | Val Acc: 87.68%
+#Модель сохранена: cnn_model_epoch_2.pth
+#Epoch  3 | Train Loss: 0.3099 | Val Loss: 0.3289 | Val Acc: 90.05%
+#Модель сохранена: cnn_model_epoch_3.pth
+#Epoch  4 | Train Loss: 0.2559 | Val Loss: 0.3136 | Val Acc: 90.43%
+#Модель сохранена: cnn_model_epoch_4.pth
+#Epoch  5 | Train Loss: 0.2243 | Val Loss: 0.2719 | Val Acc: 91.95%
+#Модель сохранена: cnn_model_epoch_5.pth
+#Epoch  6 | Train Loss: 0.1931 | Val Loss: 0.2549 | Val Acc: 92.28%
+#Модель сохранена: cnn_model_epoch_6.pth
+#Epoch  7 | Train Loss: 0.1730 | Val Loss: 0.2513 | Val Acc: 92.44%
+#Модель сохранена: cnn_model_epoch_7.pth
+#Epoch  8 | Train Loss: 0.1521 | Val Loss: 0.2437 | Val Acc: 92.49%
+#Модель сохранена: cnn_model_epoch_8.pth
+#Epoch  9 | Train Loss: 0.1403 | Val Loss: 0.2439 | Val Acc: 92.48%
+#Модель сохранена: cnn_model_epoch_9.pth
+#Epoch 10 | Train Loss: 0.1275 | Val Loss: 0.2828 | Val Acc: 91.99%
+#Модель сохранена: cnn_model_epoch_10.pth
+#Epoch 11 | Train Loss: 0.1165 | Val Loss: 0.2646 | Val Acc: 92.24%
+#Модель сохранена: cnn_model_epoch_11.pth
+#Epoch 12 | Train Loss: 0.1096 | Val Loss: 0.2579 | Val Acc: 92.55%
+#Модель сохранена: cnn_model_epoch_12.pth
+#Epoch 13 | Train Loss: 0.0995 | Val Loss: 0.2828 | Val Acc: 92.49%
+#Модель сохранена: cnn_model_epoch_13.pth
+#Epoch 14 | Train Loss: 0.0929 | Val Loss: 0.2709 | Val Acc: 92.55%
+#Модель сохранена: cnn_model_epoch_14.pth
+#Epoch 15 | Train Loss: 0.0876 | Val Loss: 0.2916 | Val Acc: 92.56%
+#Модель сохранена: cnn_model_epoch_15.pth
