@@ -242,3 +242,43 @@ for epoch in range(num_epochs):
     torch.save(model.state_dict(), f'cnn_model_epoch_{epoch+1}.pth')
     print(f"Модель сохранена: cnn_model_epoch_{epoch+1}.pth")
 
+#Epoch  1 | Train Loss: 1.4508 | Val Loss: 0.5244 | Val Acc: 85.04%
+#Модель сохранена: cnn_model_epoch_1.pth
+#Epoch  2 | Train Loss: 0.4297 | Val Loss: 0.3719 | Val Acc: 88.88%
+#Модель сохранена: cnn_model_epoch_2.pth
+#Epoch  3 | Train Loss: 0.3424 | Val Loss: 0.3682 | Val Acc: 89.00%
+#Модель сохранена: cnn_model_epoch_3.pth
+#Epoch  4 | Train Loss: 0.2957 | Val Loss: 0.3323 | Val Acc: 89.97%
+#Модель сохранена: cnn_model_epoch_4.pth
+#Epoch  5 | Train Loss: 0.2599 | Val Loss: 0.2791 | Val Acc: 91.13%
+#Модель сохранена: cnn_model_epoch_5.pth
+#Epoch  6 | Train Loss: 0.2317 | Val Loss: 0.2870 | Val Acc: 91.49%
+#Модель сохранена: cnn_model_epoch_6.pth
+#Epoch  7 | Train Loss: 0.2105 | Val Loss: 0.3122 | Val Acc: 90.82%
+#Модель сохранена: cnn_model_epoch_7.pth
+#Epoch  8 | Train Loss: 0.1951 | Val Loss: 0.2713 | Val Acc: 92.02%
+#Модель сохранена: cnn_model_epoch_8.pth
+#Epoch  9 | Train Loss: 0.1782 | Val Loss: 0.2380 | Val Acc: 92.72%
+#Модель сохранена: cnn_model_epoch_9.pth
+#Epoch 10 | Train Loss: 0.1636 | Val Loss: 0.2543 | Val Acc: 92.24%
+#Модель сохранена: cnn_model_epoch_10.pth
+#Epoch 11 | Train Loss: 0.1533 | Val Loss: 0.2500 | Val Acc: 92.41%
+#Модель сохранена: cnn_model_epoch_11.pth
+#Epoch 12 | Train Loss: 0.1434 | Val Loss: 0.2589 | Val Acc: 92.41%
+#Модель сохранена: cnn_model_epoch_12.pth
+#Epoch 13 | Train Loss: 0.1370 | Val Loss: 0.2367 | Val Acc: 92.91%
+#Модель сохранена: cnn_model_epoch_13.pth
+#Epoch 14 | Train Loss: 0.1272 | Val Loss: 0.2691 | Val Acc: 92.51%
+#Модель сохранена: cnn_model_epoch_14.pth
+#Epoch 15 | Train Loss: 0.1192 | Val Loss: 0.2576 | Val Acc: 92.52%
+#Модель сохранена: cnn_model_epoch_15.pth
+#Epoch 16 | Train Loss: 0.1127 | Val Loss: 0.2795 | Val Acc: 92.05%
+#Модель сохранена: cnn_model_epoch_16.pth
+#Epoch 17 | Train Loss: 0.1054 | Val Loss: 0.2685 | Val Acc: 92.43%
+#Модель сохранена: cnn_model_epoch_17.pth
+#Epoch 18 | Train Loss: 0.1002 | Val Loss: 0.2932 | Val Acc: 91.41%
+#Модель сохранена: cnn_model_epoch_18.pth
+#Epoch 19 | Train Loss: 0.0922 | Val Loss: 0.2923 | Val Acc: 92.19%
+#Модель сохранена: cnn_model_epoch_19.pth
+#Epoch 20 | Train Loss: 0.0908 | Val Loss: 0.2934 | Val Acc: 92.11%
+#Модель сохранена: cnn_model_epoch_20.pth
