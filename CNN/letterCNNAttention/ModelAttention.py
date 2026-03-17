@@ -151,72 +151,29 @@ class ResNet18WithAttention(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
-    
+        #ты не прав !
     def forward(self, x):
-        # Сохраняем признаки для механизма внимания
-        features = {}
-        
-        # Начальная свертка
-        x = self.relu(self.bn1(self.conv1(x)))
-        features['conv1'] = x
-        x = self.maxpool(x)
-        
-        # Layer 1
-        x = self.layer1(x)
-        features['layer1'] = x
-        
-        # Layer 2
-        x = self.layer2(x)
-        features['layer2'] = x
-        
-        # Layer 3
-        x = self.layer3(x)
-        features['layer3'] = x
-        
-        # Layer 4
-        x = self.layer4(x)
-        features['layer4'] = x
-        
-        # Применяем механизм внимания в обратном порядке
-        # Глубокие слои подсказывают более мелким
-        x_attended = x
-        
-        # Layer4 подсказывает Layer3
-        if 'layer3' in features:
-            attended_layer3 = self.attention_4_to_3(features['layer3'], x_attended)
-            # Обновляем признаки для следующих вниманий
-            features['layer3_attended'] = attended_layer3
-        
-        # Layer3 подсказывает Layer2
-        if 'layer2' in features:
-            attended_layer2 = self.attention_3_to_2(
-                features['layer2'], 
-                features.get('layer3_attended', features['layer3'])
-            )
-            features['layer2_attended'] = attended_layer2
-        
-        # Layer2 подсказывает Layer1
-        if 'layer1' in features:
-            attended_layer1 = self.attention_2_to_1(
-                features['layer1'],
-                features.get('layer2_attended', features['layer2'])
-            )
-            features['layer1_attended'] = attended_layer1
-        
-        # Layer1 подсказывает Conv1
-        if 'conv1' in features:
-            attended_conv1 = self.attention_1_to_conv(
-                features['conv1'],
-                features.get('layer1_attended', features['layer1'])
-            )
-            features['conv1_attended'] = attended_conv1
-        
-        # Используем улучшенные признаки для финальной классификации
-        # Берем признаки с layer4 и применяем к ним глобальный пулинг
-        x = self.avgpool(x)
+        # начальная свертка
+        conv1 = self.relu(self.bn1(self.conv1(x)))
+        x = self.maxpool(conv1)
+
+        # обычный ResNet проход
+        layer1 = self.layer1(x)
+        layer2 = self.layer2(layer1)
+        layer3 = self.layer3(layer2)
+        layer4 = self.layer4(layer3)
+
+        # top-down attention
+        layer3 = self.attention_4_to_3(layer3, layer4)
+        layer2 = self.attention_3_to_2(layer2, layer3)
+        layer1 = self.attention_2_to_1(layer1, layer2)
+        conv1 = self.attention_1_to_conv(conv1, layer1)
+
+        # классификация
+        x = self.avgpool(layer4)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        
+
         return x
     
     def get_attention_maps(self, x):

@@ -95,7 +95,7 @@ class ResNet18(nn.Module):
         # Полносвязный классификатор (без скрытых слоёв, только выходной)
         self.fc = nn.Linear(512, num_classes)
         
-        # Инициализация весов (Xavier/He — хороший тон)
+        # Инициализация весов (Xavier/He — хороший тон) бля эт че выходит я идиот мог взять Xavier и не ебать себе мозг
         self._init_weights()
     
     def _make_layer(self, in_channels, out_channels, blocks, stride):
@@ -107,7 +107,7 @@ class ResNet18(nn.Module):
         for _ in range(1, blocks):
             layers.append(BasicBlock(out_channels, out_channels, stride=1))
         return nn.Sequential(*layers)
-    
+    #я пидораз kaiming normal
     def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -146,7 +146,11 @@ model = ResNet18().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.003)#???
 
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Всего параметров: {total_params:,}")
 
+
+#224 * 224
 num_epochs = 25
 train_losses = []
 val_losses = []
