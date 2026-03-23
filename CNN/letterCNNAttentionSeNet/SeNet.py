@@ -184,6 +184,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
 model = SE_ResNet18().to(device)
 
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Всего параметров: {total_params:,}")
+
+
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.003)#???
 
