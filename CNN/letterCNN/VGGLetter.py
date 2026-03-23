@@ -95,7 +95,7 @@ class ResNet18(nn.Module):
         # Полносвязный классификатор (без скрытых слоёв, только выходной)
         self.fc = nn.Linear(512, num_classes)
         
-        # Инициализация весов (Xavier/He — хороший тон) бля эт че выходит я идиот мог взять Xavier и не ебать себе мозг
+        # Инициализация весов (He — хороший тон)
         self._init_weights()
     
     def _make_layer(self, in_channels, out_channels, blocks, stride):
@@ -107,7 +107,6 @@ class ResNet18(nn.Module):
         for _ in range(1, blocks):
             layers.append(BasicBlock(out_channels, out_channels, stride=1))
         return nn.Sequential(*layers)
-    #я пидораз kaiming normal
     def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
