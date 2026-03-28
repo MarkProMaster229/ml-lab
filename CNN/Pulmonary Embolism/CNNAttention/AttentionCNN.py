@@ -260,6 +260,8 @@ class VGG16_UNet_3D(nn.Module):
     
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = VGG16_UNet_3D().to(device)
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Всего параметров: {total_params:,}")
 
 
 
@@ -314,7 +316,7 @@ for epoch in range(ColVo_epoch):
     torch.save(model.state_dict(), f'cnn_model_epoch_{epoch+1}.pth')
     print(f"Модель сохранена: cnn_model_epoch_{epoch+1}.pth")
 
-    #Эпоха [1/10], Средняя ошибка: 0.9451
+#Эпоха [1/10], Средняя ошибка: 0.9451
 #Валидация: Средняя ошибка: 0.8815
 #Модель сохранена: cnn_model_epoch_1.pth
 #Эпоха [2/10], Средняя ошибка: 0.8940

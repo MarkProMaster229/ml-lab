@@ -53,12 +53,12 @@ def create_full_dataset(base_ct_dir, base_mask_dir):
 
 def get_dataloaders(batch_size=1):
     train_ds = create_full_dataset(
-        '/home/chelovek/BigWork/data/FUMPE/CT_scans',
-        '/home/chelovek/BigWork/data/FUMPE/GroundTruth'
+        '/home/chelovek/bigWork/FUMPE/CT_scans',
+        '/home/chelovek/bigWork/FUMPE/GroundTruth'
     )
     val_ds = create_full_dataset(
-        '//home/chelovek/Рабочий стол/valid/FUMPE/CT_scans/',
-        '/home/chelovek/Рабочий стол/valid/FUMPE/GroundTruth/'
+        '/home/chelovek/bigWork/Valid/Image/',
+        '/home/chelovek/bigWork/Valid/map/'
     )
     
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)

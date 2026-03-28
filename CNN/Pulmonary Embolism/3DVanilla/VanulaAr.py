@@ -171,7 +171,8 @@ class CNNModel3D(nn.Module):
     
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = CNNModel3D().to(device)
-
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Всего параметров: {total_params:,}")
 
 
 criterion = CombinedLoss()
