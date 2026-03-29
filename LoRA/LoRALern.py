@@ -16,20 +16,33 @@ class DatasetGiv:
 
         question = item["question"] 
         answer = item["answer"]
-        text = f"{question} {answer}"
+        
+        prompt = f"<|im_start|>user\n{question}\n<|im_end|>\n<|im_start|>assistant\n"
+        target = f"{answer}<|im_end|>"
+        full_text = prompt + target
 
         encoding = self.tokenizer(
-            text,
-            truncation=True,
-            padding="max_length",
-            max_length=self.max_length,
-            return_tensors="pt" 
-            )
+                full_text,
+                truncation=True,
+                padding="max_length",
+                max_length=self.max_length,
+                return_tensors="pt" 
+        )
+
         input_ids = encoding["input_ids"].squeeze(0) 
         attention_mask = encoding["attention_mask"].squeeze(0)
         labels = input_ids.clone()
-
-        labels[labels == self.tokenizer.pad_token_id] = -100
+            
+        prompt_encoding = self.tokenizer(
+            prompt,
+            truncation=True,
+            max_length=self.max_length,
+            return_tensors="pt"
+        )
+        prompt_len = prompt_encoding["input_ids"].shape[1]
+            
+        labels[:prompt_len] = -100
+        labels[labels == tokenizer.pad_token_id] = -100
 
         return {
             "input_ids": input_ids, 
@@ -52,10 +65,14 @@ class DatasetValid:
 
             question = item["question"] 
             answer = item["answer"]
-            text = f"{question} {answer}"
+            
+            prompt = f"<|im_start|>user\n{question}\n<|im_end|>\n<|im_start|>assistant\n"
+            target = f"{answer}<|im_end|>"
+            full_text = prompt + target
+
 
             encoding = self.tokenizer(
-                text,
+                full_text,
                 truncation=True,
                 padding="max_length",
                 max_length=self.max_length,
@@ -64,8 +81,18 @@ class DatasetValid:
             input_ids = encoding["input_ids"].squeeze(0) 
             attention_mask = encoding["attention_mask"].squeeze(0)
             labels = input_ids.clone()
-
-            labels[labels == self.tokenizer.pad_token_id] = -100
+            
+            prompt_encoding = self.tokenizer(
+            prompt,
+            truncation=True,
+            max_length=self.max_length,
+            return_tensors="pt"
+            )
+            
+            prompt_len = prompt_encoding["input_ids"].shape[1]
+            
+            labels[:prompt_len] = -100
+            labels[labels == tokenizer.pad_token_id] = -100
 
             return {
                 "input_ids": input_ids, 
@@ -113,13 +140,26 @@ validDataset = DataLoader(
 )
 
 
+prompt = "<|im_start|>user\n2+2 =\n<|im_end|>\n<|im_start|>assistant\n"
+inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
+output = model.generate(
+    **inputs,
+    max_new_tokens=100,
+    do_sample=False,
+    eos_token_id=tokenizer.eos_token_id,
+    pad_token_id=tokenizer.pad_token_id
+)
+
+print(tokenizer.decode(output[0]))
 
 model = get_peft_model(model, config)
 model.print_trainable_parameters()
 from torch.optim import AdamW
 optimizer = AdamW(model.parameters(), lr=1e-4)
 colVoEpoch = 10
+#batch = next(iter(train_loader))
+#print(batch["input_ids"])
 for ep in range(colVoEpoch):
     model.train()
     TrainLoss = 0
