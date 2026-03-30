@@ -160,6 +160,9 @@ optimizer = AdamW(model.parameters(), lr=1e-4)
 colVoEpoch = 10
 #batch = next(iter(train_loader))
 #print(batch["input_ids"])
+
+#batch = next(iter(validDataset))
+#print(batch["input_ids"])
 for ep in range(colVoEpoch):
     model.train()
     TrainLoss = 0
@@ -181,7 +184,7 @@ for ep in range(colVoEpoch):
     print("loss in train")
     print(TrainLoss)
     if ep % 1 == 0:
-        print("save this!")
+        #print("save this!")
         model.save_pretrained(f"loraForArch{ep+1}")
 
     model.eval()
