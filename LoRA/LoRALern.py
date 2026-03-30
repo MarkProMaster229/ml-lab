@@ -130,28 +130,28 @@ print("eos_token_id:", tokenizer.eos_token_id)
 print("pad_token_id:", tokenizer.pad_token_id)
 train_loader = DataLoader(
     dataset,
-    batch_size=6,
+    batch_size=5,
     shuffle=True
 )
 validDataset = DataLoader(
     ValidDataset,
-    batch_size=6,
+    batch_size=5,
     shuffle=True
 )
 
 
-prompt = "<|im_start|>user\n2+2 =\n<|im_end|>\n<|im_start|>assistant\n"
-inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+#prompt = "<|im_start|>user\Привет, подскажи пожалуйста - сколько будет 8 + 8\n<|im_end|>\n<|im_start|>assistant\n"
+#inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
-output = model.generate(
-    **inputs,
-    max_new_tokens=100,
-    do_sample=False,
-    eos_token_id=tokenizer.eos_token_id,
-    pad_token_id=tokenizer.pad_token_id
-)
+#output = model.generate(
+#    **inputs,
+#    max_new_tokens=100,
+#    do_sample=False,
+#    eos_token_id=tokenizer.eos_token_id,
+#    pad_token_id=tokenizer.pad_token_id
+#)
 
-print(tokenizer.decode(output[0]))
+#print(tokenizer.decode(output[0]))
 
 model = get_peft_model(model, config)
 model.print_trainable_parameters()
@@ -201,3 +201,46 @@ for ep in range(colVoEpoch):
     Valid_loss /= len(validDataset)
     print("loss in Valid")
     print(Valid_loss)
+
+
+#trainable params: 1,490,944 || all params: 1,545,205,248 || trainable%: 0.0965
+#loss in train
+#1.5381672717268178
+#loss in Valid
+#1.3133491110801696
+#loss in train
+#1.2358690744812533
+#loss in Valid
+#1.2821236598491668
+#loss in train
+#1.1925689476090113
+#loss in Valid
+#1.286949496269226
+#loss in train
+#1.1628878419190356
+#loss in Valid
+#1.2777203512191773
+#loss in train
+#1.1390144405510894
+#loss in Valid
+#1.278803893327713
+#loss in train
+#1.1183985714620608
+#loss in Valid
+#1.2875950545072556
+#loss in train
+#1.1006403402095046
+#loss in Valid
+#1.295529991388321
+#loss in train
+#1.0849739138207946
+#loss in Valid
+#1.293524442911148
+#loss in train
+#1.069941802714564
+#loss in Valid
+#1.3217632246017457
+#loss in train
+#1.0575205934893273
+#loss in Valid
+#1.3119711321592331

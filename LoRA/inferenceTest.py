@@ -19,7 +19,7 @@ model = PeftModel.from_pretrained(
 
 model.eval()
 
-prompt = "<|im_start|>user\nЭй, привет, слушай, подскажи, пожалуйста, сколько будет 8 + 8\n<|im_end|>\n<|im_start|>assistant\n"
+prompt = "<|im_start|>user\nПривет, подскажи пожалуйста - сколько будет 8 + 8\n<|im_end|>\n<|im_start|>assistant\n"
 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
 with torch.no_grad():
@@ -30,9 +30,17 @@ with torch.no_grad():
     )
 
 print(tokenizer.decode(output[0]))
+#standart
+#<|im_start|>user\Привет, подскажи пожалуйста - сколько будет 8 + 8
+#<|im_end|>
+#<|im_start|>assistant
+#8 + 8 равно 16.<|im_end|>
 
-#<|im_start|>user
-#Эй, привет, слушай, подскажи, пожалуйста, сколько будет 8 + 8
+
+
+
+#given thet sampling = False  - argmax
+#<|im_start|>user\Привет, подскажи пожалуйста - сколько будет 8 + 8
 #<|im_end|>
 #<|im_start|>assistant
 #привет! <match>8+8</match><|im_end|>
