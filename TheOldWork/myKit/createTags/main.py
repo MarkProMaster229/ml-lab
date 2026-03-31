@@ -169,7 +169,7 @@ def main():
     """Точка входа"""
     # Конфигурация
     config_dict = {
-        "model_name": "ministral-3:8b",
+        "model_name": "cogito-2.1:671b-cloud",
         "ollama_url": "http://localhost:11434/api/generate",
         "delay_between_requests": 1.5,
         "input_filename": "/home/chelovek/Загрузки/Toxic.json",
