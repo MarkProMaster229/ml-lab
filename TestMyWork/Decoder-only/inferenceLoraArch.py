@@ -19,7 +19,7 @@ modelLora = PeftModel.from_pretrained(
 )
 
 modelLora.eval()
-#если вы тестируете модель, пожалуйста сохраните диалоговую конструкцию 
+#если вы тестируете модель, пожалуйста сохраните диалоговую конструкцию
 #запрос необходимо обрамлять специльным тегом, как на примере ниже
 prompt = "<|im_start|>user\nПривет, подскажи пожалуйста - сколько будет 8 + 8\n<|im_end|>\n<|im_start|>assistant\n"
 inputs = tokenizer(prompt, return_tensors="pt").to(modelLora.device)
