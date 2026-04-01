@@ -11,6 +11,7 @@
     "label": "negative|neutral|positive"
   }
 ]
+```
 
 ```
 Метка      Количество    Доля 
@@ -38,10 +39,8 @@ model = PeftModel.from_pretrained(base_model, repo_name, subfolder=lora)
 
 ```
 ### Использование других адаптеров
-Для воспроизводимости можно использовать другие адаптеры например -
+Для тестирования можно использовать другие эпохи адаптера из репозитория например -
 ```python
-
 lora = "ForRoberta_models/loraForROBERTA_epoch4"
-
 ```
 ---
