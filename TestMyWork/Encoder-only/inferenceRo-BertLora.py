@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 tokenizer = AutoTokenizer.from_pretrained("FacebookAI/xlm-roberta-base")
 repo_name = "MarkProMaster229/experimental_models"
-lora = "ForRoberta_models/loraForROBERTA_epoch8"
+lora = "ForRoberta_models/loraForROBERTA_epoch4"
 
 base_model = AutoModelForSequenceClassification.from_pretrained(
     "FacebookAI/xlm-roberta-base",
