@@ -8,8 +8,8 @@ tokenizer = AutoTokenizer.from_pretrained("katanemo/Arch-Router-1.5B")
 
 base_model = AutoModelForCausalLM.from_pretrained(
     "katanemo/Arch-Router-1.5B",
-    device_map="auto",
-    torch_dtype="auto"
+    device_map="cpu",
+    torch_dtype=torch.float32
 )
 
 modelLora = PeftModel.from_pretrained(
