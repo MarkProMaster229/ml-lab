@@ -2,7 +2,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from peft import PeftModel
 from transformers import AutoTokenizer, AutoModelForMaskedLM
-
+from sklearn.metrics import f1_score, classification_report
 tokenizer = AutoTokenizer.from_pretrained("distilbert/distilbert-base-uncased")
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
@@ -79,12 +79,16 @@ with open(json_path, "r", encoding="utf-8") as f:
 test_texts = data
 correct = 0
 total = 0
-
+all_predictions = []
+all_true_labels = []
 for item in test_texts:
     text = item["text"]
     true_label = item["label"]
 
     predicted_label, confidence = predict(text, model, tokenizer)
+
+    all_predictions.append(predicted_label)
+    all_true_labels.append(true_label)
 
     is_correct = (predicted_label == true_label)
     if is_correct:
@@ -100,3 +104,26 @@ accuracy = correct / total if total > 0 else 0
 print(f"\nСТАТИСТИКА")
 print(f"Правильных: {correct}/{total}")
 print(f"Accuracy: {accuracy:.2%}")
+
+
+f1_macro = f1_score(all_true_labels, all_predictions, average='macro')
+f1_micro = f1_score(all_true_labels, all_predictions, average='micro')
+f1_weighted = f1_score(all_true_labels, all_predictions, average='weighted')
+
+
+f1_macro = f1_score(all_true_labels, all_predictions, average='macro')
+f1_micro = f1_score(all_true_labels, all_predictions, average='micro')
+f1_weighted = f1_score(all_true_labels, all_predictions, average='weighted')
+
+print(f"\nF1-METRICS")
+print(f"F1 Macro: {f1_macro:.4f}")
+print(f"F1 Micro: {f1_micro:.4f}")
+print(f"F1 Weighted: {f1_weighted:.4f}")
+
+
+print(f"\nCLASSIFICATION REPORT")
+print(classification_report(all_true_labels, all_predictions, 
+                           target_names=['negative', 'neutral', 'positive']))
+
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Всего параметров: {total_params:,}")
