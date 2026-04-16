@@ -1,0 +1,28 @@
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <h2>LLM Test</h2>
+        <input id="input" placeholder="Введите текст">
+        <button onclick="send()">Отправить</button>
+
+        <pre id="output"></pre>
+
+        <script>
+            async function send() {
+                const text = document.getElementById("input").value;
+
+                const res = await fetch("/process_data", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ prompt: text })
+                });
+
+                const data = await res.json();
+                document.getElementById("output").textContent =
+                    JSON.stringify(data, null, 2);
+            }
+        </script>
+    </body>
+    </html>
