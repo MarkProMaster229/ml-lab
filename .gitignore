@@ -59,3 +59,10 @@ TheOldWork/myKit/createTags/__pycache__/model_client.cpython-310.pyc
 TheOldWork/myKit/createTags/__pycache__/prompt_generator.cpython-310.pyc
 TheOldWork/myKit/createTags/__pycache__/stats_manager.cpython-310.pyc
 TheOldWork/myKit/createTags/__pycache__/validator.cpython-310.pyc
+TheOldWork/myKit/GenerateSynthetic/topics.txt
+TheOldWork/myKit/GenerateSynthetic/__pycache__/config.cpython-310.pyc
+TheOldWork/myKit/GenerateSynthetic/topics.txt
+TheOldWork/myKit/GenerateSynthetic/__pycache__/data_manager.cpython-310.pyc
+TheOldWork/myKit/GenerateSynthetic/__pycache__/model_client.cpython-310.pyc
+TheOldWork/myKit/GenerateSynthetic/__pycache__/prompt_generator.cpython-310.pyc
+TheOldWork/myKit/GenerateSynthetic/__pycache__/validator.cpython-310.pyc
