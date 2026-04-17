@@ -1067,9 +1067,175 @@ class EngineU_net:
                     return
         
         print("\n🎉 Все пациенты просмотрены!")
+
+
+    def evaluate_invariance2(self, dcm_dir: str, mat_path: str = None, threshold: float = 0.5):
+        """
+        Количественная оценка пространственной инвариантности для 2D моделей.
+        Выход: (H, W, 6) — 6 каналов (классы)
+        """
+        import pydicom
+        import scipy.io
+        
+        print("\n" + "="*70)
+        print("📊 КОЛИЧЕСТВЕННАЯ ОЦЕНКА ПРОСТРАНСТВЕННОЙ ИНВАРИАНТНОСТИ (2D)")
+        print("="*70)
+        
+        # Загружаем данные
+        dcm_files = sorted([f for f in os.listdir(dcm_dir) if f.endswith('.dcm')])
+        start_idx = (len(dcm_files) - self.n_slices) // 2
+        
+        ct_slices = []
+        for i in range(start_idx, start_idx + self.n_slices):
+            dcm_path = os.path.join(dcm_dir, dcm_files[i])
+            ds = pydicom.dcmread(dcm_path)
+            intercept = ds.RescaleIntercept if 'RescaleIntercept' in ds else 0
+            slope = ds.RescaleSlope if 'RescaleSlope' in ds else 1
+            windowed = self._window_ct(ds.pixel_array, slope, intercept)
+            ct_slices.append(windowed)
+        
+        ct_original = np.stack(ct_slices, axis=0)  # (6, H, W)
+        
+        # Базовое предсказание — форма (H, W, 6)
+        pred_original = self.predict_from_numpy(ct_original)
+        # Суммируем по классам 1-5 (класс 0 — фон)
+        binary_original = (pred_original[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+        total_pixels_original = binary_original.sum()
+        
+        print(f"\n📌 ОРИГИНАЛ: {total_pixels_original} активированных пикселей (100%)")
+        
+        results = {}
+        
+        # ========== ТЕСТ 1: ПОВОРОТ 180° ==========
+        ct_rotated = np.stack([np.rot90(s, 2) for s in ct_slices], axis=0)
+        pred_rotated = self.predict_from_numpy(ct_rotated)  # (H, W, 6)
+        
+        # Поворачиваем предсказание обратно
+        pred_rotated_back = np.rot90(pred_rotated, 2, axes=(0, 1))  # (H, W, 6)
+        binary_rotated_back = (pred_rotated_back[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+        
+        pixels_rotated = (pred_rotated[:, :, 1:].sum(axis=2) > threshold).sum()
+        pixels_rotated_back = binary_rotated_back.sum()
+        
+        intersection = (binary_original & binary_rotated_back).sum()
+        union = (binary_original | binary_rotated_back).sum()
+        iou = intersection / union if union > 0 else 0
+        
+        results['rotate'] = {
+            'name': 'Поворот 180°',
+            'pixels_after': pixels_rotated,
+            'pixels_after_back': pixels_rotated_back,
+            'retention': (pixels_rotated_back / total_pixels_original * 100) if total_pixels_original > 0 else 0,
+            'iou': iou * 100
+        }
+        
+        # ========== ТЕСТ 2: СДВИГ ==========
+        shift_values = [10, 25, 50, 75, 100]
+        results['shifts'] = []
+        
+        for shift_px in shift_values:
+            ct_shifted = np.stack([np.roll(s, shift_px, axis=1) for s in ct_slices], axis=0)
+            pred_shifted = self.predict_from_numpy(ct_shifted)  # (H, W, 6)
+            
+            # Сдвигаем обратно
+            pred_shifted_back = np.roll(pred_shifted, -shift_px, axis=1)
+            binary_shifted_back = (pred_shifted_back[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+            
+            pixels_shifted = (pred_shifted[:, :, 1:].sum(axis=2) > threshold).sum()
+            pixels_shifted_back = binary_shifted_back.sum()
+            
+            intersection = (binary_original & binary_shifted_back).sum()
+            union = (binary_original | binary_shifted_back).sum()
+            iou = intersection / union if union > 0 else 0
+            
+            results['shifts'].append({
+                'pixels': shift_px,
+                'pixels_after': pixels_shifted,
+                'pixels_after_back': pixels_shifted_back,
+                'retention': (pixels_shifted_back / total_pixels_original * 100) if total_pixels_original > 0 else 0,
+                'iou': iou * 100
+            })
+        
+        # ========== ТЕСТ 3: ЗЕРКАЛО ==========
+        ct_flipped = np.stack([np.fliplr(s) for s in ct_slices], axis=0)
+        pred_flipped = self.predict_from_numpy(ct_flipped)  # (H, W, 6)
+        
+        pred_flipped_back = np.fliplr(pred_flipped)
+        binary_flipped_back = (pred_flipped_back[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+        
+        pixels_flipped = (pred_flipped[:, :, 1:].sum(axis=2) > threshold).sum()
+        pixels_flipped_back = binary_flipped_back.sum()
+        
+        intersection = (binary_original & binary_flipped_back).sum()
+        union = (binary_original | binary_flipped_back).sum()
+        iou = intersection / union if union > 0 else 0
+        
+        results['flip'] = {
+            'name': 'Зеркало',
+            'pixels_after': pixels_flipped,
+            'pixels_after_back': pixels_flipped_back,
+            'retention': (pixels_flipped_back / total_pixels_original * 100) if total_pixels_original > 0 else 0,
+            'iou': iou * 100
+        }
+        
+        # ========== ВЫВОД РЕЗУЛЬТАТОВ ==========
+        print("\n" + "-"*70)
+        print("📈 РЕЗУЛЬТАТЫ ТЕСТОВ:")
+        print("-"*70)
+        
+        r = results['rotate']
+        print(f"\n🔄 ПОВОРОТ 180°:")
+        print(f"   Активаций: {r['pixels_after']} px")
+        print(f"   После обратного поворота: {r['pixels_after_back']} px")
+        print(f"   Сохранение: {r['retention']:.1f}%")
+        print(f"   IoU с оригиналом: {r['iou']:.1f}%")
+        
+        print(f"\n➡️ СДВИГ ВПРАВО:")
+        print(f"   {'Сдвиг':<8} {'Активаций':<12} {'После возврата':<14} {'Сохранение':<12} {'IoU':<8}")
+        print(f"   {'-'*60}")
+        for s in results['shifts']:
+            print(f"   {s['pixels']:3d} px   {s['pixels_after']:5d} px     {s['pixels_after_back']:5d} px        {s['retention']:5.1f}%      {s['iou']:5.1f}%")
+        
+        r = results['flip']
+        print(f"\n🪞 ЗЕРКАЛО:")
+        print(f"   Активаций: {r['pixels_after']} px")
+        print(f"   После обратного отражения: {r['pixels_after_back']} px")
+        print(f"   Сохранение: {r['retention']:.1f}%")
+        print(f"   IoU с оригиналом: {r['iou']:.1f}%")
+        
+        # ========== ИТОГОВАЯ ТАБЛИЦА ==========
+        print("\n" + "="*70)
+        print("📋 СВОДНАЯ ТАБЛИЦА ДЛЯ ПУБЛИКАЦИИ:")
+        print("="*70)
+        print(f"""
+            Модель: 2D U_net
+            Оригинальных активаций: {total_pixels_original} px
+            
+            ┌─────────────────┬──────────────┬──────────────┬─────────────┐
+            │ Трансформация   │ Сохранение   │ IoU          │ Статус      │
+            ├─────────────────┼──────────────┼──────────────┼─────────────┤
+            │ Поворот 180°    │ {results['rotate']['retention']:5.1f}%       │ {results['rotate']['iou']:5.1f}%
+            │ Сдвиг 10px      │ {results['shifts'][0]['retention']:5.1f}%       │ {results['shifts'][0]['iou']:5.1f}%
+            │ Сдвиг 25px      │ {results['shifts'][1]['retention']:5.1f}%       │ {results['shifts'][1]['iou']:5.1f}%
+            │ Сдвиг 50px      │ {results['shifts'][2]['retention']:5.1f}%       │ {results['shifts'][2]['iou']:5.1f}%
+            │ Сдвиг 75px      │ {results['shifts'][3]['retention']:5.1f}%       │ {results['shifts'][3]['iou']:5.1f}% 
+            │ Сдвиг 100px     │ {results['shifts'][4]['retention']:5.1f}%       │ {results['shifts'][4]['iou']:5.1f}%
+            │ Зеркало         │ {results['flip']['retention']:5.1f}%       │ {results['flip']['iou']:5.1f}%
+            └─────────────────┴──────────────┴──────────────┴─────────────┘
+            """)
+        
+        return results
+
+
 y = EngineU_net()
 
 y.demo()
+y.evaluate_invariance2(
+        dcm_dir="/home/chelovek/Рабочий стол/PATFully/PAT034",
+        mat_path="/home/chelovek/Рабочий стол/PATFully/PAT034.mat",
+        threshold=0.5
+)
+
 #-------------------------------------------------------------------------------------------------
 #AttentionCNNModel
 # attention_unet_engine.py
@@ -1531,9 +1697,171 @@ class EngineAttentionUNet:
         
         print("\n🎉 Все пациенты просмотрены!")
 
+    def evaluate_invariance2(self, dcm_dir: str, mat_path: str = None, threshold: float = 0.5):
+        """
+        Количественная оценка пространственной инвариантности для 2D моделей.
+        Выход: (H, W, 6) — 6 каналов (классы)
+        """
+        import pydicom
+        import scipy.io
+        
+        print("\n" + "="*70)
+        print("📊 КОЛИЧЕСТВЕННАЯ ОЦЕНКА ПРОСТРАНСТВЕННОЙ ИНВАРИАНТНОСТИ (2D)")
+        print("="*70)
+        
+        # Загружаем данные
+        dcm_files = sorted([f for f in os.listdir(dcm_dir) if f.endswith('.dcm')])
+        start_idx = (len(dcm_files) - self.n_slices) // 2
+        
+        ct_slices = []
+        for i in range(start_idx, start_idx + self.n_slices):
+            dcm_path = os.path.join(dcm_dir, dcm_files[i])
+            ds = pydicom.dcmread(dcm_path)
+            intercept = ds.RescaleIntercept if 'RescaleIntercept' in ds else 0
+            slope = ds.RescaleSlope if 'RescaleSlope' in ds else 1
+            windowed = self._window_ct(ds.pixel_array, slope, intercept)
+            ct_slices.append(windowed)
+        
+        ct_original = np.stack(ct_slices, axis=0)  # (6, H, W)
+        
+        # Базовое предсказание — форма (H, W, 6)
+        pred_original = self.predict_from_numpy(ct_original)
+        # Суммируем по классам 1-5 (класс 0 — фон)
+        binary_original = (pred_original[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+        total_pixels_original = binary_original.sum()
+        
+        print(f"\n📌 ОРИГИНАЛ: {total_pixels_original} активированных пикселей (100%)")
+        
+        results = {}
+        
+        # ========== ТЕСТ 1: ПОВОРОТ 180° ==========
+        ct_rotated = np.stack([np.rot90(s, 2) for s in ct_slices], axis=0)
+        pred_rotated = self.predict_from_numpy(ct_rotated)  # (H, W, 6)
+        
+        # Поворачиваем предсказание обратно
+        pred_rotated_back = np.rot90(pred_rotated, 2, axes=(0, 1))  # (H, W, 6)
+        binary_rotated_back = (pred_rotated_back[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+        
+        pixels_rotated = (pred_rotated[:, :, 1:].sum(axis=2) > threshold).sum()
+        pixels_rotated_back = binary_rotated_back.sum()
+        
+        intersection = (binary_original & binary_rotated_back).sum()
+        union = (binary_original | binary_rotated_back).sum()
+        iou = intersection / union if union > 0 else 0
+        
+        results['rotate'] = {
+            'name': 'Поворот 180°',
+            'pixels_after': pixels_rotated,
+            'pixels_after_back': pixels_rotated_back,
+            'retention': (pixels_rotated_back / total_pixels_original * 100) if total_pixels_original > 0 else 0,
+            'iou': iou * 100
+        }
+        
+        # ========== ТЕСТ 2: СДВИГ ==========
+        shift_values = [10, 25, 50, 75, 100]
+        results['shifts'] = []
+        
+        for shift_px in shift_values:
+            ct_shifted = np.stack([np.roll(s, shift_px, axis=1) for s in ct_slices], axis=0)
+            pred_shifted = self.predict_from_numpy(ct_shifted)  # (H, W, 6)
+            
+            # Сдвигаем обратно
+            pred_shifted_back = np.roll(pred_shifted, -shift_px, axis=1)
+            binary_shifted_back = (pred_shifted_back[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+            
+            pixels_shifted = (pred_shifted[:, :, 1:].sum(axis=2) > threshold).sum()
+            pixels_shifted_back = binary_shifted_back.sum()
+            
+            intersection = (binary_original & binary_shifted_back).sum()
+            union = (binary_original | binary_shifted_back).sum()
+            iou = intersection / union if union > 0 else 0
+            
+            results['shifts'].append({
+                'pixels': shift_px,
+                'pixels_after': pixels_shifted,
+                'pixels_after_back': pixels_shifted_back,
+                'retention': (pixels_shifted_back / total_pixels_original * 100) if total_pixels_original > 0 else 0,
+                'iou': iou * 100
+            })
+        
+        # ========== ТЕСТ 3: ЗЕРКАЛО ==========
+        ct_flipped = np.stack([np.fliplr(s) for s in ct_slices], axis=0)
+        pred_flipped = self.predict_from_numpy(ct_flipped)  # (H, W, 6)
+        
+        pred_flipped_back = np.fliplr(pred_flipped)
+        binary_flipped_back = (pred_flipped_back[:, :, 1:].sum(axis=2) > threshold).astype(np.uint8)
+        
+        pixels_flipped = (pred_flipped[:, :, 1:].sum(axis=2) > threshold).sum()
+        pixels_flipped_back = binary_flipped_back.sum()
+        
+        intersection = (binary_original & binary_flipped_back).sum()
+        union = (binary_original | binary_flipped_back).sum()
+        iou = intersection / union if union > 0 else 0
+        
+        results['flip'] = {
+            'name': 'Зеркало',
+            'pixels_after': pixels_flipped,
+            'pixels_after_back': pixels_flipped_back,
+            'retention': (pixels_flipped_back / total_pixels_original * 100) if total_pixels_original > 0 else 0,
+            'iou': iou * 100
+        }
+        
+        # ========== ВЫВОД РЕЗУЛЬТАТОВ ==========
+        print("\n" + "-"*70)
+        print("📈 РЕЗУЛЬТАТЫ ТЕСТОВ:")
+        print("-"*70)
+        
+        r = results['rotate']
+        print(f"\n🔄 ПОВОРОТ 180°:")
+        print(f"   Активаций: {r['pixels_after']} px")
+        print(f"   После обратного поворота: {r['pixels_after_back']} px")
+        print(f"   Сохранение: {r['retention']:.1f}%")
+        print(f"   IoU с оригиналом: {r['iou']:.1f}%")
+        
+        print(f"\n➡️ СДВИГ ВПРАВО:")
+        print(f"   {'Сдвиг':<8} {'Активаций':<12} {'После возврата':<14} {'Сохранение':<12} {'IoU':<8}")
+        print(f"   {'-'*60}")
+        for s in results['shifts']:
+            print(f"   {s['pixels']:3d} px   {s['pixels_after']:5d} px     {s['pixels_after_back']:5d} px        {s['retention']:5.1f}%      {s['iou']:5.1f}%")
+        
+        r = results['flip']
+        print(f"\n🪞 ЗЕРКАЛО:")
+        print(f"   Активаций: {r['pixels_after']} px")
+        print(f"   После обратного отражения: {r['pixels_after_back']} px")
+        print(f"   Сохранение: {r['retention']:.1f}%")
+        print(f"   IoU с оригиналом: {r['iou']:.1f}%")
+        
+        # ========== ИТОГОВАЯ ТАБЛИЦА ==========
+        print("\n" + "="*70)
+        print("📋 СВОДНАЯ ТАБЛИЦА ДЛЯ ПУБЛИКАЦИИ:")
+        print("="*70)
+        print(f"""
+            Модель: 2D Attention U-Net
+            Оригинальных активаций: {total_pixels_original} px
+            
+            ┌─────────────────┬──────────────┬──────────────┬─────────────┐
+            │ Трансформация   │ Сохранение   │ IoU          │ Статус      │
+            ├─────────────────┼──────────────┼──────────────┼─────────────┤
+            │ Поворот 180°    │ {results['rotate']['retention']:5.1f}%       │ {results['rotate']['iou']:5.1f}%
+            │ Сдвиг 10px      │ {results['shifts'][0]['retention']:5.1f}%       │ {results['shifts'][0]['iou']:5.1f}%
+            │ Сдвиг 25px      │ {results['shifts'][1]['retention']:5.1f}%       │ {results['shifts'][1]['iou']:5.1f}%
+            │ Сдвиг 50px      │ {results['shifts'][2]['retention']:5.1f}%       │ {results['shifts'][2]['iou']:5.1f}%
+            │ Сдвиг 75px      │ {results['shifts'][3]['retention']:5.1f}%       │ {results['shifts'][3]['iou']:5.1f}% 
+            │ Сдвиг 100px     │ {results['shifts'][4]['retention']:5.1f}%       │ {results['shifts'][4]['iou']:5.1f}%
+            │ Зеркало         │ {results['flip']['retention']:5.1f}%       │ {results['flip']['iou']:5.1f}%
+            └─────────────────┴──────────────┴──────────────┴─────────────┘
+            """)
+        
+        return results
+
+
 TheTestAttentionU_net = EngineAttentionUNet()
 TheTestAttentionU_net.demo()
-
+TheTestAttentionU_net.evaluate_invariance2(
+        dcm_dir="/home/chelovek/Рабочий стол/PATFully/PAT034",
+        mat_path="/home/chelovek/Рабочий стол/PATFully/PAT034.mat",
+        threshold=0.5
+)
 #-----------------------------------------------------------------------------------
 #3D U-Net с VGG-подобным энкодером
 # unet3d_engine.py
@@ -2101,7 +2429,7 @@ class EngineUNet3D:
         print("📋 СВОДНАЯ ТАБЛИЦА ДЛЯ ПУБЛИКАЦИИ:")
         print("="*70)
         print(f"""
-        Модель: 3D U-Net (VGG)
+        Модель: 3D UNet3D
         Оригинальных активаций: {total_pixels_original} px
         
         ┌─────────────────┬──────────────┬──────────────┬─────────────┐
@@ -2719,7 +3047,7 @@ class EngineAttentionUNet3D:
             print("📋 СВОДНАЯ ТАБЛИЦА ДЛЯ ПУБЛИКАЦИИ:")
             print("="*70)
             print(f"""
-            Модель: 3D U-Net (VGG)
+            Модель: 3D AttentionUNet3D
             Оригинальных активаций: {total_pixels_original} px
             
             ┌─────────────────┬──────────────┬──────────────┬─────────────┐
