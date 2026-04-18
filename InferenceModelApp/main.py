@@ -14,9 +14,12 @@ from engineModel.engineClassificationSmall import EngineTransformerClassifier
 
 from engineModel.engineRESNET18 import EngineRESNET18
 from engineModel.engineMobileNetV2 import EngineMobileNetV2
-from engineModel.engineSE-ResNet18 import EngineSEResNetClassifier
+from engineModel.engineSE_ResNet18 import EngineSEResNetClassifier
 
-
+from engineModel.engineU_net import EngineU_net
+from engineModel.engineAttentionUNet import EngineAttentionUNet
+from engineModel.engineUNet3D import EngineUNet3D
+from engineModel.engineAttentionUNet3D import EngineAttentionUNet3D
 
 import kagglehub
 #this collector
@@ -113,10 +116,55 @@ class Manager:
             self.MyCollector(model)
             print(result)
             return result
-        
+#y.evaluate_invariance2(
+#    dcm_dir=dataset_path / "PAT034",
+#    mat_path=dataset_path / "PAT034.mat",
+#    threshold=0.5
+#)
         #end embol.
-            
+    def ThisControllerImageEmbol(self, MyMagicObject):
+        #U_net2d
+        if MyMagicObject == 1:
+            model = EngineU_net()
+            model.demo()
+            model.evaluate_invariance2(
+                dcm_dir=dataset_path / "PAT034",
+                mat_path=dataset_path / "PAT034.mat",
+                threshold=0.5
+            )
+            self.MyCollector(model)
+        #U-Net attention2d
+        elif MyMagicObject == 2:
+            model = EngineAttentionUNet()
+            model.demo()
+            model.evaluate_invariance2(
+                dcm_dir=dataset_path / "PAT034",
+                mat_path=dataset_path / "PAT034.mat",
+                threshold=0.5
+            )
+            self.MyCollector(model)
+        #3D U-Net witch VGG encoder
+        elif MyMagicObject == 3:
+            model = EngineUNet3D()
+            model.evaluate_invariance2(
+                dcm_dir=dataset_path / "PAT034",
+                mat_path=dataset_path / "PAT034.mat",
+                threshold=0.5
+            )
+            self.MyCollector(model)
+
+        elif MyMagicObject == 4:
+            model = EngineAttentionUNet3D()
+            model.evaluate_invariance2(
+                dcm_dir=dataset_path / "PAT034",
+                mat_path=dataset_path / "PAT034.mat",
+                threshold=0.5
+            )
+            self.MyCollector(model)
+
 managerForModel = Manager()
+
+managerForModel.ThisControllerImageEmbol(1)
 #this test 
 app = Flask(__name__)
 CORS(app)

@@ -71,3 +71,11 @@ InferenceModelApp/engineModel/__pycache__/distilBert.cpython-310.pyc
 InferenceModelApp/engineModel/__pycache__/engineRoBert.cpython-310.pyc
 InferenceModelApp/engineModel/__pycache__/baseBert.cpython-310.pyc
 InferenceModelApp/engineModel/__pycache__/engAutoreg.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineAttentionUNet.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineClassificationSmall.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineSE_ResNet18.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineU_net.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineUNet3D.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineRESNET18.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineMobileNetV2.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineAttentionUNet3D.cpython-310.pyc

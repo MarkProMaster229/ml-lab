@@ -11,11 +11,6 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from peft import PeftModel
 
-
-#CNN engine
-#CNN letter
-#------------------------------------------------------------------------------------
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
