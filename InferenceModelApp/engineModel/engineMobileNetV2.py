@@ -191,7 +191,3 @@ class EngineMobileNetV2:
         label = self.id2label.get(pred_class.item(), f"class_{pred_class.item()}")
         
         return label, confidence.item()
-    
-engineMobile = EngineMobileNetV2()
-letter, conf = engineMobile.predict("/home/chelovek/Загрузки/4618_G.jpg")
-print(f"{letter} ({conf:.2%})")

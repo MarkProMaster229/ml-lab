@@ -708,13 +708,3 @@ class EngineU_net:
             """)
         
         return results
-
-
-y = EngineU_net()
-
-y.demo()
-y.evaluate_invariance2(
-        dcm_dir="/home/chelovek/Рабочий стол/PATFully/PAT034",
-        mat_path="/home/chelovek/Рабочий стол/PATFully/PAT034.mat",
-        threshold=0.5
-)

@@ -631,12 +631,3 @@ class EngineAttentionUNet:
             """)
         
         return results
-
-
-TheTestAttentionU_net = EngineAttentionUNet()
-TheTestAttentionU_net.demo()
-TheTestAttentionU_net.evaluate_invariance2(
-        dcm_dir="/home/chelovek/Рабочий стол/PATFully/PAT034",
-        mat_path="/home/chelovek/Рабочий стол/PATFully/PAT034.mat",
-        threshold=0.5
-)

@@ -601,13 +601,3 @@ class EngineUNet3D:
         print("\n📋 ДЛЯ СРАВНЕНИЯ (2D модели):")
         
         return results
-
-#потом поправлю
-if __name__ == "__main__":
-    EngineUNet3D.demo()
-    engine = EngineUNet3D()
-    results = engine.evaluate_invariance(
-        dcm_dir="/home/chelovek/Рабочий стол/PATFully/PAT034",
-        mat_path="/home/chelovek/Рабочий стол/PATFully/PAT034.mat",
-        threshold=0.5
-    )

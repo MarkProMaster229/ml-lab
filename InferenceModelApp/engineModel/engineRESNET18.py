@@ -179,9 +179,3 @@ class EngineRESNET18:
         label = self.id2label.get(pred_class.item(), f"class_{pred_class.item()}")
         
         return label, confidence.item()
-
-engine = EngineRESNET18(
-)
-
-letter, conf = engine.predict("/home/chelovek/Загрузки/4618_G.jpg")
-print(f"{letter} ({conf:.2%})")

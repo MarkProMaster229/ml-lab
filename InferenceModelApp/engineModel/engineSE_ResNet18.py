@@ -266,12 +266,3 @@ class EngineSEResNetClassifier:
             results.append((label, prob))
         
         return results
-
-
-if __name__ == "__main__":
-    # Инициализация
-    engine = EngineSEResNetClassifier()
-    
-    # Предсказание
-    letter, conf = engine.predict("test_images/A.png")
-    print(f"\n Результат: '{letter}' (уверенность: {conf:.2%})")

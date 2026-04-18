@@ -28,7 +28,7 @@ DATASET_NAME = "andrewmvd/pulmonary-embolism-in-ct-images"
 
 def get_dataset_path():
     path = kagglehub.dataset_download(DATASET_NAME)
-    return Path(path)
+    return Path(path) / "FUMPE"
 
 dataset_path = get_dataset_path()
 
@@ -123,48 +123,60 @@ class Manager:
 #)
         #end embol.
     def ThisControllerImageEmbol(self, MyMagicObject):
+        dataset_path = get_dataset_path()
+    
+        dcm_dir = dataset_path / "CT_scans" / "PAT034"
+        mat_path = dataset_path / "GroundTruth" / "PAT034.mat"
+        
         #U_net2d
         if MyMagicObject == 1:
             model = EngineU_net()
             model.demo()
             model.evaluate_invariance2(
-                dcm_dir=dataset_path / "PAT034",
-                mat_path=dataset_path / "PAT034.mat",
+                dcm_dir=dcm_dir,
+                mat_path=mat_path,
                 threshold=0.5
             )
             self.MyCollector(model)
         #U-Net attention2d
         elif MyMagicObject == 2:
             model = EngineAttentionUNet()
-            model.demo()
+            import os
+            print(f"dataset_path = {dataset_path}")
+            print(f"Содержимое: {os.listdir(dataset_path)}")
             model.evaluate_invariance2(
-                dcm_dir=dataset_path / "PAT034",
-                mat_path=dataset_path / "PAT034.mat",
+                dcm_dir=dcm_dir,
+                mat_path=mat_path,
                 threshold=0.5
             )
+            model.demo()
             self.MyCollector(model)
         #3D U-Net witch VGG encoder
         elif MyMagicObject == 3:
+            import os
             model = EngineUNet3D()
-            model.evaluate_invariance2(
-                dcm_dir=dataset_path / "PAT034",
-                mat_path=dataset_path / "PAT034.mat",
+            print(f"dataset_path = {dataset_path}")
+            print(f"Содержимое: {os.listdir(dataset_path)}")
+            model.evaluate_invariance(
+                dcm_dir=dcm_dir,
+                mat_path=mat_path,
                 threshold=0.5
             )
+            model.demo()
             self.MyCollector(model)
-
+        #3D Attention U-Net
         elif MyMagicObject == 4:
             model = EngineAttentionUNet3D()
             model.evaluate_invariance2(
-                dcm_dir=dataset_path / "PAT034",
-                mat_path=dataset_path / "PAT034.mat",
+                dcm_dir=dcm_dir,
+                mat_path=mat_path,
                 threshold=0.5
             )
+            model.demo()
             self.MyCollector(model)
-
 managerForModel = Manager()
 
-managerForModel.ThisControllerImageEmbol(1)
+managerForModel.ThisControllerImageEmbol(4)
 #this test 
 app = Flask(__name__)
 CORS(app)

@@ -4,7 +4,13 @@ import torch
 import gc
 from flask import Flask, request, jsonify, render_template_string, render_template
 from flask_cors import CORS
-
+import torch.nn as nn
+import numpy as np
+from huggingface_hub import hf_hub_download
+import json
+import os
+from PIL import Image
+import matplotlib.pyplot as plt
 #this file include engine only
 
 import torch
@@ -624,13 +630,3 @@ class EngineAttentionUNet3D:
             print("\n📋 ДЛЯ СРАВНЕНИЯ (2D модели):")
             
             return results
-
-
-if __name__ == "__main__":
-    EngineAttentionUNet3D.demo()
-    AttentionUNet3D = EngineAttentionUNet3D()
-    results = AttentionUNet3D.evaluate_invariance2(
-        dcm_dir="/home/chelovek/Рабочий стол/PATFully/PAT034",
-        mat_path="/home/chelovek/Рабочий стол/PATFully/PAT034.mat",
-        threshold=0.5
-    )
