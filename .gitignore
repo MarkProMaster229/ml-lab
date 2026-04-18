@@ -66,3 +66,8 @@ TheOldWork/myKit/GenerateSynthetic/__pycache__/data_manager.cpython-310.pyc
 TheOldWork/myKit/GenerateSynthetic/__pycache__/model_client.cpython-310.pyc
 TheOldWork/myKit/GenerateSynthetic/__pycache__/prompt_generator.cpython-310.pyc
 TheOldWork/myKit/GenerateSynthetic/__pycache__/validator.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/__init__.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/distilBert.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engineRoBert.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/baseBert.cpython-310.pyc
+InferenceModelApp/engineModel/__pycache__/engAutoreg.cpython-310.pyc
