@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Letter Recognition | ResNet18 | MobileNetV2 | SE-ResNet18</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CNN Letter Recognition</h1>
+            <p class="subtitle">Распознавание букв на изображениях</p>
+        </header>
+        
+        <!-- Выбор модели -->
+        <div class="model-selector">
+            <label for="modelType">Выберите архитектуру:</label>
+            <select id="modelType" class="model-select">
+                <option value="1">ResNet18</option>
+                <option value="2">MobileNetV2</option>
+                <option value="3">SE-ResNet18</option>
+            </select>
+        </div>
+        
+        <!-- Зона Drag & Drop -->
+        <div id="dropZone" class="drop-zone">
+            <div class="drop-zone-content">
+                <small class="drop-hint">или</small>
+                <button type="button" id="fileSelectBtn" class="btn btn-secondary">Выбрать файл на компьютере</button>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+            </div>
+        </div>
+
+        <div id="result" class="result hidden">
+            <h2>Результат распознавания</h2>
+            <div id="resultContent"></div>
+        </div>
+        
+        <!-- Загрузка -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Обработка изображения</p>
+            <small>Модель загружается, это может занять несколько секунд</small>
+        </div>
+        <!-- Навигация между страницами -->
+        <div class="nav-links">
+            <a href="/" class="nav-link active">CNN (Image)</a>
+            <span class="nav-sep">|</span>
+            <a href="/language" class="nav-link">Language</a>
+            <span class="nav-sep">|</span>
+            <a href="/embolism" class="nav-link">Embolism</a>
+        </div>
+                
+        <!-- Тестовая папка (для разработчика) -->
+        <div class="test-section">
+            <hr>
+            <details>
+                <summary>Тестовый режим (прогнать папку myLetterTest)</summary>
+                <div class="test-controls">
+                    <button id="testFolderBtn" class="btn btn-test">запустить тест папки</button>
+                    <div id="testResults" class="test-results hidden"></div>
+                </div>
+            </details>
+        </div>
+    </div>
+    
+    <script src="/static/drag-drop.js"></script>
+</body>
+</html>

@@ -155,7 +155,7 @@ class EngineSEResNetClassifier:
         self,
         repo_id: str = "MarkProMaster229/experimental_models",
         config_path: str = "SeNetLetterAttentionModel/config.json",
-        weights_path: str = "SeNetLetterAttentionModel/ cnn_model_epoch_13.pth"
+        weights_path: str = "SeNetLetterAttentionModel/cnn_model_epoch_13.pth"
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         

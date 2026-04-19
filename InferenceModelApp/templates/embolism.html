@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Embolism Segmentation | 2D/3D U-Net</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Embolism Segmentation</h1>
+            <p class="subtitle">2D U-Net | Attention 2D | 3D U-Net | Attention 3D</p>
+        </header>
+        
+        <!-- Навигация -->
+        <div class="nav-links">
+            <a href="/" class="nav-link">CNN (Image)</a>
+            <span class="nav-sep">|</span>
+            <a href="/language" class="nav-link">Language</a>
+            <span class="nav-sep">|</span>
+            <a href="/embolism" class="nav-link active">Embolism</a>
+        </div>
+        
+        <!-- Выбор модели -->
+        <div class="model-selector">
+            <label>Выберите модель:</label>
+            <select id="modelSelect" class="model-select">
+                <option value="">-- Загрузка --</option>
+            </select>
+        </div>
+        
+        <!-- Выбор трансформации -->
+        <div class="model-selector" id="transformSelector" style="display: none;">
+            <label>Трансформация:</label>
+            <select id="transformSelect" class="model-select">
+            </select>
+        </div>
+        
+        <!-- Выбор среза -->
+        <div class="model-selector" id="sliceSelector" style="display: none;">
+            <label>Срез (1-6):</label>
+            <input type="range" id="sliceSlider" min="0" max="5" value="0" step="1">
+            <span id="sliceValue" style="margin-left: 10px;">1/6</span>
+        </div>
+        
+        <!-- Три колонки для изображений -->
+        <div id="imagesContainer" style="display: none;">
+            <div class="embolism-grid">
+                <div class="embolism-card">
+                    <h3>КТ (исходное)</h3>
+                    <img id="ctImage" src="" alt="CT">
+                </div>
+                <div class="embolism-card">
+                    <h3>Разметка врача (GT)</h3>
+                    <img id="gtImage" src="" alt="GT">
+                </div>
+                <div class="embolism-card">
+                    <h3>Предсказание модели</h3>
+                    <img id="predImage" src="" alt="Prediction">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Загрузка -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка визуализаций...</p>
+        </div>
+    </div>
+    
+    <script src="/static/embolism.js"></script>
+</body>
+</html>

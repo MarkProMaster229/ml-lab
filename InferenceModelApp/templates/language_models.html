@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autoregressive Language Models | GPT · LLaMA</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Autoregressive Language Models</h1>
+            <p class="subtitle">Генерация текста</p>
+        </header>
+        
+        <!-- Навигация между страницами -->
+        <div class="nav-links">
+            <a href="/" class="nav-link">← CNN (Image)</a>
+            <span class="nav-sep">|</span>
+            <a href="/language" class="nav-link active">Language</a>
+            <span class="nav-sep">|</span>
+            <a href="/embolism" class="nav-link">Embolism</a>
+        </div>
+        
+        <!-- Выбор модели -->
+        <div class="model-selector">
+            <select id="modelType" class="model-select">
+                <option value="1">AutoRegressive (Base)</option>
+            </select>
+        </div>
+        
+        <!-- Ввод промпта -->
+        <div class="prompt-section">
+            <label for="promptInput">Введите промпт:</label>
+            <textarea id="promptInput" class="prompt-textarea" rows="5" 
+                      placeholder="Например:&#10;Объясни, что такое ковариантность в физике.&#10;&#10;или&#10;&#10;Напиши код на Python для вычисления чисел Фибоначчи."></textarea>
+        </div>
+        
+        <!-- Кнопка генерации -->
+        <div class="generate-section">
+            <button id="generateBtn" class="btn btn-generate">Сгенерировать</button>
+        </div>
+        
+        <!-- Загрузка -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Генерация текста...</p>
+            <small>Модель загружается, это может занять 10-30 секунд</small>
+        </div>
+        
+        <!-- Результат -->
+        <div id="result" class="result hidden">
+            <h2>Сгенерированный текст</h2>
+            <div id="resultContent"></div>
+        </div>
+        
+        <!-- Примеры промптов (опционально) -->
+        <div class="examples-section">
+            <details>
+                <summary>Примеры промптов</summary>
+                <div class="examples-grid">
+                    <button class="example-btn" data-prompt="Объясни теорию относительности простыми словами.">Физика</button>
+                    <button class="example-btn" data-prompt="Напиши функцию на Python для сортировки списка.">Код</button>
+                    <button class="example-btn" data-prompt="Придумай короткую историю про робота.">Творчество</button>
+                    <button class="example-btn" data-prompt="Что такое энтропия в термодинамике?">Наука</button>
+                </div>
+            </details>
+        </div>
+    </div>
+    
+    <script src="/static/language.js"></script>
+</body>
+</html>

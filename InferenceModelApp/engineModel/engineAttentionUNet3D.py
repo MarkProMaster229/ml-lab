@@ -630,3 +630,116 @@ class EngineAttentionUNet3D:
             print("\n📋 ДЛЯ СРАВНЕНИЯ (2D модели):")
             
             return results
+    
+    def export_all_transformations(self, dcm_dir, mat_path, output_dir, threshold=0.5):
+        """
+        Экспортирует все трансформации (original, rotate, shift, flip) в PNG файлы.
+        
+        Args:
+            dcm_dir: путь к папке с DICOM файлами
+            mat_path: путь к .mat файлу с GT маской
+            output_dir: куда сохранять (Path object)
+            threshold: порог для бинаризации предсказания
+        """
+        import scipy.io
+        import matplotlib.pyplot as plt
+        import pydicom
+        # Загружаем исходные данные
+        if mat_path and os.path.exists(mat_path):
+            gt_mask_original = scipy.io.loadmat(mat_path)['Mask']
+            has_gt = True
+        else:
+            gt_mask_original = None
+            has_gt = False
+        
+        dcm_files = sorted([f for f in os.listdir(dcm_dir) if f.endswith('.dcm')])
+        start_idx = (len(dcm_files) - self.n_slices) // 2
+        
+        ct_slices_original = []
+        for i in range(start_idx, start_idx + self.n_slices):
+            dcm_path = os.path.join(dcm_dir, dcm_files[i])
+            ds = pydicom.dcmread(dcm_path)
+            intercept = ds.RescaleIntercept if 'RescaleIntercept' in ds else 0
+            slope = ds.RescaleSlope if 'RescaleSlope' in ds else 1
+            windowed = self._window_ct(ds.pixel_array, slope, intercept)
+            ct_slices_original.append(windowed)
+        
+        # Сохраняем исходное состояние
+        ct_slices = [s.copy() for s in ct_slices_original]
+        gt_mask = gt_mask_original.copy() if has_gt else None
+        
+        # Функция для пересчёта маски с текущими ct_slices и gt_mask
+        def compute_pred_mask():
+            ct_volume = np.stack(ct_slices, axis=0)
+            pred_mask = self.predict_from_numpy(ct_volume)
+            return (pred_mask > threshold).astype(np.uint8)
+        
+        # Функция для сохранения текущего состояния
+        def save_current_state(state_name):
+            state_dir = output_dir / state_name
+            state_dir.mkdir(parents=True, exist_ok=True)
+            
+            pred_binary = compute_pred_mask()
+            
+            for idx in range(self.n_slices):
+                # 1. Чистое КТ
+                fig, ax = plt.subplots(figsize=(6, 6))
+                ax.imshow(ct_slices[idx], cmap='gray')
+                ax.axis('off')
+                plt.tight_layout()
+                plt.savefig(state_dir / f'slice_{idx}_ct.png', dpi=100, bbox_inches='tight')
+                plt.close()
+                
+                # 2. GT (разметка врача)
+                if has_gt and gt_mask is not None:
+                    fig, ax = plt.subplots(figsize=(6, 6))
+                    gt_slice_idx = start_idx + idx
+                    if gt_slice_idx < gt_mask.shape[2]:
+                        gt_slice = gt_mask[:, :, gt_slice_idx]
+                        ax.imshow(gt_slice, cmap='Reds', alpha=0.7)
+                    ax.imshow(ct_slices[idx], cmap='gray', alpha=0.5)
+                    ax.axis('off')
+                    plt.tight_layout()
+                    plt.savefig(state_dir / f'slice_{idx}_gt.png', dpi=100, bbox_inches='tight')
+                    plt.close()
+                
+                # 3. Предсказание модели
+                fig, ax = plt.subplots(figsize=(6, 6))
+                pred_slice = pred_binary[idx]
+                if pred_slice.sum() > 0:
+                    ax.imshow(pred_slice, cmap='Purples', alpha=0.7)
+                ax.imshow(ct_slices[idx], cmap='gray', alpha=0.5)
+                ax.axis('off')
+                plt.tight_layout()
+                plt.savefig(state_dir / f'slice_{idx}_pred.png', dpi=100, bbox_inches='tight')
+                plt.close()
+            
+            print(f"  ✅ Сохранено состояние: {state_name}")
+            return pred_binary
+        
+        # Сохраняем исходное состояние
+        print("📦 Сохраняем ORIGINAL...")
+        save_current_state("original")
+        
+        # Применяем и сохраняем ROTATE
+        print("🔄 Применяем ROTATE...")
+        ct_slices = [np.rot90(s, 2) for s in ct_slices]
+        if has_gt:
+            gt_mask = np.rot90(gt_mask, 2, axes=(0,1))
+        save_current_state("rotated")
+        
+        # Применяем и сохраняем SHIFT (от rotated состояния)
+        print("➡️ Применяем SHIFT...")
+        ct_slices = [np.roll(s, 50, axis=1) for s in ct_slices]
+        if has_gt:
+            gt_mask = np.roll(gt_mask, 50, axis=1)
+        save_current_state("shifted")
+        
+        # Применяем и сохраняем FLIP (от shifted состояния)
+        print("🪞 Применяем FLIP...")
+        ct_slices = [np.fliplr(s) for s in ct_slices]
+        if has_gt:
+            gt_mask = np.fliplr(gt_mask)
+        save_current_state("flipped")
+        
+        print(f"✅ Готово! Все файлы сохранены в {output_dir}")
