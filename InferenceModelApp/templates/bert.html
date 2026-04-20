@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BERT | Emotion Classification</title>
+    <title>BERT | Sentiment analysis</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -32,22 +32,22 @@
         </div>
         
         <div class="prompt-section">
-            <label for="textInput">Введите текст для анализа эмоций:</label>
+            <label for="textInput">Введите текст:</label>
             <textarea id="textInput" class="prompt-textarea" rows="4" 
                       placeholder=" "></textarea>
         </div>
         
         <div class="generate-section">
-            <button id="predictBtn" class="btn btn-generate">Определить эмоцию</button>
+            <button id="predictBtn" class="btn btn-generate">классификация тональности текста</button>
         </div>
         
         <div id="loading" class="loading hidden">
             <div class="spinner"></div>
-            <p>Анализ текста...</p>
+            <p>Анализ текста</p>
         </div>
         
         <div id="result" class="result hidden">
-            <h2>Эмоциональная окраска</h2>
+            <h2>Конечная тональность</h2>
             <div id="resultContent"></div>
         </div>
     </div>

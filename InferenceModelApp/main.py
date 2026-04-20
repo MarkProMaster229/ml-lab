@@ -29,12 +29,10 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
-    """Главная страница с CNN моделями"""
     return render_template('cnn_models.html')
 
 @app.route('/predict_cnn', methods=['POST'])
 def predict_cnn():
-    """Эндпоинт для предсказания по изображению"""
     try:
         if 'image' not in request.files:
             return jsonify({'success': False, 'error': 'Файл не загружен'})
