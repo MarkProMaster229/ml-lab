@@ -6,16 +6,6 @@ const resultDiv = document.getElementById('result');
 const resultContent = document.getElementById('resultContent');
 const loadingDiv = document.getElementById('loading');
 
-// Примеры промптов
-const exampleBtns = document.querySelectorAll('.example-btn');
-exampleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const prompt = btn.getAttribute('data-prompt');
-        promptInput.value = prompt;
-        promptInput.focus();
-    });
-});
-
 // Генерация по кнопке
 generateBtn.addEventListener('click', () => {
     const prompt = promptInput.value.trim();

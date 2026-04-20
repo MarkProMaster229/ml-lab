@@ -79,3 +79,4 @@ InferenceModelApp/engineModel/__pycache__/engineUNet3D.cpython-310.pyc
 InferenceModelApp/engineModel/__pycache__/engineRESNET18.cpython-310.pyc
 InferenceModelApp/engineModel/__pycache__/engineMobileNetV2.cpython-310.pyc
 InferenceModelApp/engineModel/__pycache__/engineAttentionUNet3D.cpython-310.pyc
+InferenceModelApp/__pycache__/managerModel.cpython-310.pyc
