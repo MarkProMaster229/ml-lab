@@ -20,7 +20,7 @@ CORS(app)
 UPLOAD_FOLDER = Path('/tmp/inference_uploads')
 UPLOAD_FOLDER.mkdir(exist_ok=True, parents=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB макс
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'tif'}
 
@@ -121,10 +121,8 @@ def predict_language():
         if not prompt.strip():
             return jsonify({'success': False, 'error': 'Промпт не может быть пустым'})
         
-        # Вызываем твою state-машину
         result = managerForModel.ThisControllerLanguageModel(prompt, model_type)
         
-        # result — это то, что возвращает твой метод (скорее всего строка)
         return jsonify({
             'success': True,
             'generated_text': result
@@ -139,17 +137,16 @@ def predict_language():
 from pathlib import Path
 import shutil
 
-# Глобальная папка для кеша прекомпьютед картинок
+
 PRECOMPUTED_CACHE = Path("/tmp/inference_precomputed")
 PRECOMPUTED_REPO = "MarkProMaster229/experimental_models"  # твой репозиторий
 
 def ensure_precomputed_available():
     """Проверяет, есть ли локально precomputed, если нет — скачивает с Hugging Face"""
     local_precomputed = PRECOMPUTED_CACHE / "precomputed"
-    
-    # Если уже есть — выходим
+
     if local_precomputed.exists() and any(local_precomputed.iterdir()):
-        print(f"✅ Precomputed уже есть: {local_precomputed}")
+        print(f"Precomputed уже есть: {local_precomputed}")
         return local_precomputed
     
     print(f"📥 Скачиваю precomputed с Hugging Face...")
@@ -187,7 +184,6 @@ def get_embolism_images():
     """
     precomputed_path = ensure_precomputed_available()
     
-    # Структура: precomputed/PAT034/{model_name}/{transform}/
     pat034_path = precomputed_path / "PAT034"
     
     if not pat034_path.exists():
@@ -199,10 +195,8 @@ def get_embolism_images():
             transforms = []
             for transform_dir in model_dir.iterdir():
                 if transform_dir.is_dir():
-                    # Считаем количество срезов по файлам
                     slices = set()
                     for f in transform_dir.glob("slice_*_ct.png"):
-                        # Извлекаем номер среза из имени slice_X_ct.png
                         import re
                         match = re.search(r'slice_(\d+)_ct\.png', f.name)
                         if match:
@@ -229,8 +223,7 @@ def embolism_static(filename):
     """Отдаёт precomputed картинки как статику"""
     precomputed_path = ensure_precomputed_available()
     file_path = precomputed_path / filename
-    
-    # Безопасность: проверяем, что путь внутри precomputed
+
     try:
         file_path.resolve().relative_to(precomputed_path.resolve())
     except ValueError:
@@ -241,6 +234,38 @@ def embolism_static(filename):
     
     from flask import send_file
     return send_file(file_path, mimetype='image/png')
+
+@app.route('/bert')
+def bert_models():
+    """Страница для BERT (классификация эмоций)"""
+    return render_template('bert.html')
+
+@app.route('/predict_bert', methods=['POST'])
+def predict_bert():
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        model_type = int(data.get('model_type', 2))
+        
+        if not text.strip():
+            return jsonify({'success': False, 'error': 'Текст не может быть пустым'})
+        
+        result = managerForModel.ThisControllerLanguageModel(text, model_type)
+
+        if isinstance(result, tuple):
+            emotion, confidence = result
+        else:
+            emotion = result
+            confidence = 1.0
+        
+        return jsonify({
+            'success': True,
+            'emotion': emotion,
+            'confidence': confidence
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     print(" Запуск сервера...")

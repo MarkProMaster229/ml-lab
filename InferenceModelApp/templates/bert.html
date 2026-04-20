@@ -1,0 +1,57 @@
+<!-- templates/bert.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BERT | Emotion Classification</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BERT: Emotion Classification</h1>
+            <p class="subtitle">BaseBert | DistilBert | RoBERTa | Custom Classifier</p>
+        </header>
+        
+        <div class="nav-links">
+            <a href="/" class="nav-link">CNN (Image)</a>
+            <span class="nav-sep">|</span>
+            <a href="/language" class="nav-link">AutoRegressive</a>
+            <span class="nav-sep">|</span>
+            <a href="/embolism" class="nav-link">Embolism</a>
+            <span class="nav-sep">|</span>
+            <a href="/bert" class="nav-link active">BERT (Emotion)</a>
+        </div>
+        
+        <div class="model-selector">
+            <select id="modelType" class="model-select">
+                <option value="2">BaseBert (fine-tuned)</option>
+                <option value="3">DistilBert</option>
+                <option value="4">RoBERTa</option>
+                <option value="5">TransformerClassifier (custom)</option>
+            </select>
+        </div>
+        
+        <div class="prompt-section">
+            <label for="textInput">Введите текст для анализа эмоций:</label>
+            <textarea id="textInput" class="prompt-textarea" rows="4" 
+                      placeholder=" "></textarea>
+        </div>
+        
+        <div class="generate-section">
+            <button id="predictBtn" class="btn btn-generate">Определить эмоцию</button>
+        </div>
+        
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Анализ текста...</p>
+        </div>
+        
+        <div id="result" class="result hidden">
+            <h2>Эмоциональная окраска</h2>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+    
+    <script src="/static/bert.js"></script>
+</body>
+</html>

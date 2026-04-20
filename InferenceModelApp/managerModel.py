@@ -102,7 +102,7 @@ class Manager:
         #ClassificationSmall
         elif MyMagicObject == 5:
             model = EngineTransformerClassifier()
-            result = model.predict()
+            result = model.predict(promt)
             self.MyCollector(model)
             print(result)
             return result

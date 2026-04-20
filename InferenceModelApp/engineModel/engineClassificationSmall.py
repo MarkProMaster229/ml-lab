@@ -78,19 +78,17 @@ class EngineTransformerClassifier:
     def __init__(
         self,
         repo_id: str = "MarkProMaster229/ClassificationSmall",
-        config_path: str = "config.json",
+        config_path: str = "config.pth",
         weights_path: str = "model_weights.pth",
         tokenizer_path: str = "tokenizer.json",
         vocab_path: str = "vocab.txt"
     ):
         self.device = torch.device("cpu")
         
-        # 1. Скачиваем конфиг
+
         print(f"📥 Загрузка конфига: {repo_id}/{config_path}")
         config_file = hf_hub_download(repo_id=repo_id, filename=config_path)
-        
-        with open(config_file, 'r', encoding='utf-8') as f:
-            self.config = json.load(f)
+        self.config = torch.load(config_file, map_location='cpu')
         
         # 2. Скачиваем токенизатор и vocab
         print(f"📥 Загрузка токенизатора...")
@@ -116,7 +114,7 @@ class EngineTransformerClassifier:
         # 4. Грузим веса
         print(f"📥 Загрузка весов: {repo_id}/{weights_path}")
         weights_file = hf_hub_download(repo_id=repo_id, filename=weights_path)
-        state_dict = torch.load(weights_file, map_location=self.device, weights_only=True)
+        state_dict = torch.load(weights_file, map_location=self.device)
         self.model.load_state_dict(state_dict)
         
         self.model.eval()
@@ -133,20 +131,10 @@ class EngineTransformerClassifier:
         print(f"   Классы: {self.id2label}")
     
     def predict(self, text: str, max_length: int = None):
-        """
-        Предсказание тональности текста.
-        
-        Args:
-            text: строка для классификации
-            max_length: максимальная длина (по умолчанию из конфига)
-            
-        Returns:
-            tuple: (метка, уверенность)
-        """
+        """Предсказание для одного текста"""
         if max_length is None:
             max_length = self.config.get('maxLen', 100)
         
-        # Токенизация
         inputs = self.tokenizer(
             text,
             truncation=True,
@@ -158,22 +146,17 @@ class EngineTransformerClassifier:
         input_ids = inputs['input_ids'].to(self.device)
         attention_mask = inputs['attention_mask'].to(self.device)
         
-        # Инференс
         with torch.no_grad():
             logits = self.model(input_ids, attention_mask=attention_mask)
         
-        # Софтмакс и argmax
         probs = F.softmax(logits, dim=1)
         confidence, pred_class = torch.max(probs, dim=1)
         
-        pred_class = pred_class.item()
-        confidence = confidence.item()
-        
-        label = self.id2label.get(str(pred_class), f"class_{pred_class}")
-        
-        return label, confidence
-    
-    def predict(self, texts: list, max_length: int = None):
+        label = self.id2label.get(pred_class.item(), f"class_{pred_class.item()}")
+        return label, confidence.item()
+
+    def predict_batch(self, texts: list, max_length: int = None):
+        """Предсказание для списка текстов"""
         results = []
         for text in texts:
             label, conf = self.predict(text, max_length)
