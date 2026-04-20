@@ -170,7 +170,7 @@ class EngineU_net:
         weights_path: str = "vanila2dEmbol/cnn_model_epoch_4.pth",
         n_slices: int = 6
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.n_slices = n_slices
         
         # 1. Скачиваем config.json

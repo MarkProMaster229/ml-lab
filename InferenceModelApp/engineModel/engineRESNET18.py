@@ -118,7 +118,7 @@ class EngineRESNET18:
         config_path: str = "letterResNet18/config.json",
         weights_path: str = "letterResNet18/cnn_model_epoch_8.pth"
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         
         # 1. Скачиваем config.json
         print(f"📥 Загрузка конфига: {repo_id}/{config_path}")

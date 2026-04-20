@@ -83,7 +83,7 @@ class EngineTransformerClassifier:
         tokenizer_path: str = "tokenizer.json",
         vocab_path: str = "vocab.txt"
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         
         # 1. Скачиваем конфиг
         print(f"📥 Загрузка конфига: {repo_id}/{config_path}")

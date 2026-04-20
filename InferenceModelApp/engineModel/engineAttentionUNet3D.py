@@ -206,7 +206,7 @@ class EngineAttentionUNet3D:
         weights_path: str = "VGG16_UNet_3DAttentionEmbol/cnn_model_epoch_7.pth",
         n_slices: int = 6
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.n_slices = n_slices
         
         print(f"📥 Загрузка конфига: {repo_id}/{config_path}")

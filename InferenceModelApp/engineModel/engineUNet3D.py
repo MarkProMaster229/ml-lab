@@ -167,7 +167,7 @@ class EngineUNet3D:
         weights_path: str = "3DVanillaCNNEmbol/cnn_model_epoch_9.pth",
         n_slices: int = 6
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.n_slices = n_slices
         
         print(f"📥 Загрузка конфига: {repo_id}/{config_path}")

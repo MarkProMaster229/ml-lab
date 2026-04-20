@@ -127,7 +127,7 @@ class EngineMobileNetV2:
         config_path: str = "MobileNetV2/config.json",
         weights_path: str = "MobileNetV2/cnn_model_epoch_15.pth"
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         
         # 1. Скачиваем config.json
         print(f"📥 Загрузка конфига: {repo_id}/{config_path}")
