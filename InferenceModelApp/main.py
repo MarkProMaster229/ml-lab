@@ -6,22 +6,6 @@ from flask import Flask, request, jsonify, render_template_string, render_templa
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-from engineModel.engAutoreg import EngineAutoreg
-
-from engineModel.baseBert import BaseBert
-from engineModel.distilBert import DistilBert
-from engineModel.engineRoBert import EngineRoBert
-from engineModel.engineClassificationSmall import EngineTransformerClassifier
-
-from engineModel.engineRESNET18 import EngineRESNET18
-from engineModel.engineMobileNetV2 import EngineMobileNetV2
-from engineModel.engineSE_ResNet18 import EngineSEResNetClassifier
-
-from engineModel.engineU_net import EngineU_net
-from engineModel.engineAttentionUNet import EngineAttentionUNet
-from engineModel.engineUNet3D import EngineUNet3D
-from engineModel.engineAttentionUNet3D import EngineAttentionUNet3D
-
 from managerModel import Manager
 import kagglehub
 
@@ -33,13 +17,11 @@ managerForModel = Manager()
 app = Flask(__name__)
 CORS(app)
 
-# Конфигурация
 UPLOAD_FOLDER = Path('/tmp/inference_uploads')
 UPLOAD_FOLDER.mkdir(exist_ok=True, parents=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB макс
 
-# Разрешённые расширения
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'tif'}
 
 def allowed_file(filename):
@@ -54,7 +36,6 @@ def index():
 def predict_cnn():
     """Эндпоинт для предсказания по изображению"""
     try:
-        # Проверяем, есть ли файл
         if 'image' not in request.files:
             return jsonify({'success': False, 'error': 'Файл не загружен'})
         
@@ -66,21 +47,17 @@ def predict_cnn():
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'Неподдерживаемый формат. Используйте: png, jpg, jpeg, bmp, tiff'})
         
-        # Сохраняем временно
         filename = secure_filename(file.filename)
         filepath = UPLOAD_FOLDER / filename
         file.save(filepath)
         
-        # Получаем тип модели
         model_type = int(request.form.get('model_type', 1))
         
-        # Вызываем твою state-машину
         label, confidence = managerForModel.ThisControllerImageLetterModel(
             str(filepath), 
             model_type
         )
         
-        # Удаляем временный файл (комментируй, если нужно сохранять)
         try:
             filepath.unlink()
         except:
@@ -180,22 +157,20 @@ def ensure_precomputed_available():
     print(f"   Папка: precomputed/")
     from huggingface_hub import snapshot_download
     try:
-        # Скачиваем только папку precomputed
         snapshot_download(
             repo_id=PRECOMPUTED_REPO,
-            allow_patterns=["precomputed/*"],  # только precomputed
+            allow_patterns=["precomputed/*"],
             local_dir=PRECOMPUTED_CACHE,
             local_dir_use_symlinks=False,
             resume_download=True
         )
-        print(f"✅ Скачивание завершено: {local_precomputed}")
+        print(f"Скачивание завершено: {local_precomputed}")
         return local_precomputed
     except Exception as e:
-        print(f"❌ Ошибка скачивания: {e}")
-        # Если скачать не удалось — пробуем использовать локальную папку (для разработки)
+        print(f"Ошибка скачивания: {e}")
         local_fallback = Path("static/precomputed")
         if local_fallback.exists():
-            print(f"⚠️ Использую локальную папку: {local_fallback}")
+            print(f"Использую локальную папку: {local_fallback}")
             return local_fallback
         raise
 
