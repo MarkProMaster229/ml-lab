@@ -52,16 +52,11 @@ def get_images_from_folder(folder_path):
 #)
 
 #main
+#вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! вайбкодить это плохо! 
 class Manager:
     def MyCollector(self, model):
-        if hasattr(model, 'model'):
-            model.model.cpu()
-            del model.model
-        if hasattr(model, 'tokenizer'):
-            del model.tokenizer
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
         del model
         gc.collect()
 
