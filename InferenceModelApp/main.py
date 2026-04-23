@@ -137,7 +137,7 @@ import shutil
 
 
 PRECOMPUTED_CACHE = Path("/tmp/inference_precomputed")
-PRECOMPUTED_REPO = "MarkProMaster229/experimental_models"  # твой репозиторий
+PRECOMPUTED_REPO = "MarkProMaster229/experimental_models"
 
 def ensure_precomputed_available():
     """Проверяет, есть ли локально precomputed, если нет — скачивает с Hugging Face"""
