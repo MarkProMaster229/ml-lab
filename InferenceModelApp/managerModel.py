@@ -54,14 +54,13 @@ def get_images_from_folder(folder_path):
 #main
 class Manager:
     def MyCollector(self, model):
-        torch.cuda.empty_cache()
-        torch.cuda.synchronize()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+        
         del model
         gc.collect()
-
         gc.collect()
-
-    #this Load-Use-Unload
     
     def ThisControllerLanguageModel(self, promt, MyMagicObject):
         # my magic logic
