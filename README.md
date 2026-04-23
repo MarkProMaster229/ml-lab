@@ -1,7 +1,8 @@
 # ml-lab
 ## папка CNN
 ## для воспроизведения работы посетите
-# /ml-lab/TestMyWork/README.md
+# [/ml-lab/TestMyWork/README.md](InferenceModelApp/README.md)
+# путь /ml-lab/InferenceModelApp/README.md
 # для работы 
 # pip install -r requirements.txt
 

@@ -52,7 +52,7 @@ async function predictEmotion(text) {
 function showResult(emotion, confidence) {
     resultContent.innerHTML = `
         <div class="result-card">
-            <p><strong>Эмоция:</strong> ${emotion}</p>
+            <p><strong>Метка:</strong> ${emotion}</p>
             <p><strong>Уверенность:</strong> ${(confidence * 100).toFixed(2)}%</p>
         </div>
     `;
