@@ -52,6 +52,7 @@ def get_images_from_folder(folder_path):
 #)
 
 #main
+class Manager:
     def MyCollector(self, model):
         torch.cuda.empty_cache()
         torch.cuda.synchronize()
