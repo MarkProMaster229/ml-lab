@@ -2,7 +2,11 @@ import time
 import torch
 from transformers import AutoModelForCausalLM, PreTrainedTokenizerFast
 
-local_model_path = "/mnt/storage/allModel/model_smart_pruned6-7-10-11-14-15"
+# ================== СИСТЕМНЫЙ ПРОМТ ==================
+
+# =====================================================
+
+local_model_path = "/mnt/storage/allModel/model/models--LiquidAI--LFM2.5-2.6B-Base/snapshots/78f33a52fbe65f7665963f482179dcc3e75f0d9e/"
 
 print("Загрузка токенизатора...")
 tokenizer = PreTrainedTokenizerFast.from_pretrained(
@@ -20,7 +24,7 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 messages = [
-    {"role": "user", "content": "расскажи про себя"}
+    {"role": "user", "content": prompt}
 ]
 
 print("Применяем шаблон чата (Jinja)...")
@@ -41,7 +45,7 @@ start_time = time.perf_counter()
 
 outputs = model.generate(
     **inputs, 
-    max_new_tokens=500,  # Сняли жесткие ограничения
+    max_new_tokens=500,
     do_sample=True,
     temperature=0.2    
 )

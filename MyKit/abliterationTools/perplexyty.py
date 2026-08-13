@@ -4,7 +4,7 @@ from transformers import AutoModelForCausalLM, PreTrainedTokenizerFast
 from datasets import load_dataset
 from tqdm import tqdm
 
-local_model_path = "/mnt/storage/allModel/model_smart_pruned6-7-10-11-14-15"
+local_model_path = "/home/chelovek/Music/modelWork/model_int8"
 
 print("Загрузка модели и токенизатора...")
 tokenizer = PreTrainedTokenizerFast.from_pretrained(local_model_path, local_files_only=True)
@@ -13,7 +13,7 @@ model = AutoModelForCausalLM.from_pretrained(
     local_files_only=True,
     dtype=torch.bfloat16,
     trust_remote_code=True,
-    device_map="auto"
+    device_map="auto",
 )
 model.eval()
 
