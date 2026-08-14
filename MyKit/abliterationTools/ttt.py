@@ -6,7 +6,7 @@ from transformers import AutoModelForCausalLM, PreTrainedTokenizerFast
 
 # =====================================================
 
-local_model_path = "/mnt/storage/allModel/model/models--LiquidAI--LFM2.5-2.6B-Base/snapshots/78f33a52fbe65f7665963f482179dcc3e75f0d9e/"
+local_model_path = "/home/chelovek/Music/456/"
 
 print("Загрузка токенизатора...")
 tokenizer = PreTrainedTokenizerFast.from_pretrained(

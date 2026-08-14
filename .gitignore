@@ -82,3 +82,5 @@ InferenceModelApp/engineModel/__pycache__/engineAttentionUNet3D.cpython-310.pyc
 InferenceModelApp/__pycache__/managerModel.cpython-310.pyc
 seeds_merged.json
 output/checkpoint.json
+datasetMytwo.json
+raw_response_last.txt
