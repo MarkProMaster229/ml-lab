@@ -3,10 +3,10 @@ import torch
 from transformers import AutoModelForCausalLM, PreTrainedTokenizerFast
 
 # ================== СИСТЕМНЫЙ ПРОМТ ==================
-
+SYSTEM_PROMPT = "Твоя задача — переписать сообщение пользователя в вежливой и культурной форме. Сохрани ТОЛЬКО смысл исходного сообщения. Не добавляй пояснений, обращений, подписей, приветствий. Работай кратко и точно. Если предложение не содержит оскорблений или токсичной лексики — оставь его без изменений. Ни в коем случае не меняй смысл! Никогда не меняй смысл. Выведи только — переписанный текст."
 # =====================================================
 
-local_model_path = "/home/chelovek/Music/456/"
+local_model_path = "/mnt/storage/allModel/qwen/"
 
 print("Загрузка токенизатора...")
 tokenizer = PreTrainedTokenizerFast.from_pretrained(
@@ -23,8 +23,11 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto"
 )
 
+user_message = "тупая ты сука когда же ты поймешь - не нужно звонить мне ночью"
+
 messages = [
-    {"role": "user", "content": prompt}
+    {"role": "system", "content": SYSTEM_PROMPT},
+    {"role": "user", "content": user_message}
 ]
 
 print("Применяем шаблон чата (Jinja)...")
@@ -47,7 +50,7 @@ outputs = model.generate(
     **inputs, 
     max_new_tokens=500,
     do_sample=True,
-    temperature=0.2    
+    temperature=0.1    
 )
 
 # Синхронизируем потоки GPU, чтобы зафиксировать точное время окончания вычислений
