@@ -2,40 +2,54 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mamba_ssm import Mamba
+from torch.utils.checkpoint import checkpoint
+
 
 class GQAAttention(nn.Module):
-    def __init__(self, d_model, n_heads_q, n_heads_kv):
+    def __init__(self, d_model, n_heads_q, n_heads_kv, head_dim=None, dropout=0.0):
         super().__init__()
-        self.d_model = d_model
+        if head_dim is None:
+            head_dim = d_model // n_heads_q
+        
         self.n_heads_q = n_heads_q
         self.n_heads_kv = n_heads_kv
-        self.head_dim = d_model // n_heads_q
+        self.head_dim = head_dim
+        self.inner_dim_q = n_heads_q * head_dim
+        self.inner_dim_kv = n_heads_kv * head_dim
+        self.dropout_p = dropout
 
-        self.q_proj = nn.Linear(d_model, n_heads_q * self.head_dim, bias=False)
-        self.k_proj = nn.Linear(d_model, n_heads_kv * self.head_dim, bias=False)
-        self.v_proj = nn.Linear(d_model, n_heads_kv * self.head_dim, bias=False)
-        self.out_proj = nn.Linear(d_model, d_model, bias=False)
+        self.q_proj = nn.Linear(d_model, self.inner_dim_q, bias=False)
+        self.k_proj = nn.Linear(d_model, self.inner_dim_kv, bias=False)
+        self.v_proj = nn.Linear(d_model, self.inner_dim_kv, bias=False)
+        self.out_proj = nn.Linear(self.inner_dim_q, d_model, bias=False)
 
     def forward(self, x):
         B, T, C = x.size()
+        n_rep = self.n_heads_q // self.n_heads_kv
         
-        q = self.q_proj(x) 
-        k = self.k_proj(x) 
-        v = self.v_proj(x) 
+        q = self.q_proj(x).view(B, T, self.n_heads_q, self.head_dim).transpose(1, 2)
+        k = self.k_proj(x).view(B, T, self.n_heads_kv, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(B, T, self.n_heads_kv, self.head_dim).transpose(1, 2)
         
-        q = q.view(B, T, self.n_heads_q, self.head_dim).transpose(1, 2)   
-        k = k.view(B, T, self.n_heads_kv, self.head_dim).transpose(1, 2)  
-        v = v.view(B, T, self.n_heads_kv, self.head_dim).transpose(1, 2)  
+        q = q.contiguous().view(B, self.n_heads_kv, n_rep, T, self.head_dim)
+        k = k.unsqueeze(2)
+        v = v.unsqueeze(2)
         
-        y = F.scaled_dot_product_attention(q, k, v, attn_mask=None, is_causal=True)
-        
-        return self.out_proj(y.transpose(1, 2).contiguous().view(B, T, C))
+        y = F.scaled_dot_product_attention(
+            q, k, v, attn_mask=None,
+            dropout_p=self.dropout_p if self.training else 0.0,
+            is_causal=True,
+        )
+        y = y.reshape(B, self.n_heads_q, T, self.head_dim)
+        y = y.transpose(1, 2).contiguous().view(B, T, self.inner_dim_q)
+        return self.out_proj(y)
+
 
 class TransformerBlock(nn.Module):
-    def __init__(self, d_model, n_heads_q, n_heads_kv, dropout=0.1):
+    def __init__(self, d_model, n_heads_q, n_heads_kv, head_dim=None, dropout=0.1):
         super().__init__()
         self.ln_1 = nn.LayerNorm(d_model)
-        self.attn = GQAAttention(d_model, n_heads_q, n_heads_kv)
+        self.attn = GQAAttention(d_model, n_heads_q, n_heads_kv, head_dim=head_dim, dropout=dropout)
         
         self.ln_2 = nn.LayerNorm(d_model)
         self.mlp = nn.Sequential(
@@ -50,14 +64,15 @@ class TransformerBlock(nn.Module):
         x = x + self.drop(self.mlp(self.ln_2(x)))
         return x
 
+
 class MambaBlock(nn.Module):
     def __init__(self, d_model, dropout=0.1):
         super().__init__()
         self.mamba = Mamba(
-            d_model=d_model,    
-            d_state=16,         
-            d_conv=4,           
-            expand=2,           
+            d_model=d_model,
+            d_state=16,
+            d_conv=4,
+            expand=2,
         )
         self.ln = nn.LayerNorm(d_model)
         self.drop = nn.Dropout(dropout)
@@ -67,9 +82,9 @@ class MambaBlock(nn.Module):
 
 
 class CustomHybridGPT(nn.Module):
-    def __init__(self, vocab_size, d_model, max_len, n_heads_q_my, n_heads_kv_my, dropout_prob=0.1):
+    def __init__(self, vocab_size, d_model, max_len, n_heads_q_my, n_heads_kv_my,
+                 head_dim=None, dropout_prob=0.1):
         super().__init__()
-        
 
         self.token_embedding = nn.Embedding(vocab_size, d_model)
         self.position_embedding = nn.Embedding(max_len, d_model)
@@ -77,12 +92,23 @@ class CustomHybridGPT(nn.Module):
         
         self.layer_1_mamba = MambaBlock(d_model, dropout_prob)
         
-        self.layer_2_transformer = TransformerBlock(d_model, n_heads_q_my, n_heads_kv_my, dropout_prob)
+        self.layer_2_transformer = TransformerBlock(
+            d_model, n_heads_q_my, n_heads_kv_my, head_dim=head_dim, dropout=dropout_prob
+        )
         
         self.layer_3_mamba = MambaBlock(d_model, dropout_prob)
         self.layer_4_mamba = MambaBlock(d_model, dropout_prob)
 
-        self.layer_5_transformer = TransformerBlock(d_model, n_heads_q_my, n_heads_kv_my, dropout_prob)
+        self.layer_5_transformer = TransformerBlock(
+            d_model, n_heads_q_my, n_heads_kv_my, head_dim=head_dim, dropout=dropout_prob
+        )
+        self.layer_6_mamba = MambaBlock(d_model, dropout_prob)
+        self.layer_7_mamba = MambaBlock(d_model, dropout_prob)
+        
+        self.layer_8_transformer = TransformerBlock(
+            d_model, n_heads_q_my, n_heads_kv_my, head_dim=head_dim, dropout=dropout_prob
+        )
+
         
         self.ln_f = nn.LayerNorm(d_model)
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
@@ -94,30 +120,46 @@ class CustomHybridGPT(nn.Module):
         
         x = self.token_embedding(token_ids) + self.position_embedding(pos)
         x = self.emb_dropout(x)
-    
-        x = self.layer_1_mamba(x)        # Шаг 1: Мамба0
-        x = self.layer_2_transformer(x)  # Шаг 2: Первое QKV внимание
-        x = self.layer_3_mamba(x)        # Шаг 3: Мамба1
-        x = self.layer_4_mamba(x)        # Шаг 4: Мамба2
-        x = self.layer_5_transformer(x)  # Шаг 5: Итоговое QKV представление
+        
+        x = checkpoint(self.layer_1_mamba, x, use_reentrant=False)
+        x = checkpoint(self.layer_2_transformer, x, use_reentrant=False)
+        x = checkpoint(self.layer_3_mamba, x, use_reentrant=False)
+        x = checkpoint(self.layer_4_mamba, x, use_reentrant=False)
+        x = checkpoint(self.layer_5_transformer, x, use_reentrant=False)
+        x = checkpoint(self.layer_6_mamba, x, use_reentrant=False)
+        x = checkpoint(self.layer_7_mamba, x, use_reentrant=False)
+        x = checkpoint(self.layer_8_transformer, x, use_reentrant=False)
         
         x = self.ln_f(x)
-        logits = self.lm_head(x) 
+        logits = self.lm_head(x)
         
         return logits
 
 
+def build_model(vocab_size, config=None):
+    cfg = config or {}
+    return CustomHybridGPT(
+        vocab_size=vocab_size,
+        d_model=cfg.get("d_model", 512),
+        max_len=cfg.get("max_len", 1024),
+        n_heads_q_my=cfg.get("n_heads_q", 16),
+        n_heads_kv_my=cfg.get("n_heads_kv", 4),
+        head_dim=cfg.get("head_dim", None),
+        dropout_prob=cfg.get("dropout", 0.1),
+    )
+
+
 if __name__ == "__main__":
     model = CustomHybridGPT(
-        vocab_size=1000, 
-        d_model=512, 
-        max_len=1024,  
+        vocab_size=1000,
+        d_model=512,
+        max_len=1024,
         n_heads_q_my=16,
         n_heads_kv_my=4,
-        dropout_prob=0.1
+        head_dim=64,
+        dropout_prob=0.1,
     ).cuda()
-    
+
     dummy_input = torch.randint(0, 1000, (2, 8)).cuda()
-    
     logits = model(dummy_input)
-    print("Размер выходных логитов:", logits.shape) # Ожидается [2, 8, 1000]
+    print("Размер выходных логитов:", logits.shape)
