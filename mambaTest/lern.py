@@ -2,15 +2,17 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from safetensors.torch import save_file, load_file
 import torch.nn as nn
+from tqdm import tqdm
 
 import math
 import torch
 import torch.nn.functional as F
-from torch.cuda.amp import autocast, GradScaler      # ← + GradScaler
+from torch.cuda.amp import autocast, GradScaler
 from transformers import AutoTokenizer
 
 from mambaMain import build_model
 from data import DataModule, load_json_data
+from pathlib import Path
 
 
 # ─── Токенизатор ───
@@ -21,11 +23,8 @@ print("vocab_size:", len(tokenizer))
 device = torch.device("cuda")
 
 # ─── Данные ───
-data = load_json_data("/run/media/user/Storage/ml-lub/ml-lab/MydatasetT2_F.json")
+data = load_json_data("/run/media/user/Storage/ml-lub/valid.json")
 print(f"Всего примеров в JSON: {len(data)}")
-
-import os
-from pathlib import Path
 
 
 def save_checkpoint(model, optimizer, epoch, global_step, config, ckpt_dir, best_val_loss=None):
@@ -69,6 +68,8 @@ def load_checkpoint(model, optimizer, ckpt_dir, device):
     print(f"  ← loaded {ckpt_dir} (epoch {epoch}, step {global_step})")
     return epoch, global_step, best_val_loss
 
+
+# ─── Данные (DataModule) ───
 dm = DataModule(
     data=data,
     tokenizer=tokenizer,
@@ -79,6 +80,7 @@ dm = DataModule(
 )
 train_loader = dm.train_dataloader()
 val_loader = dm.val_dataloader()
+
 # ─── Модель ───
 vocab_size = len(tokenizer)
 model = build_model(vocab_size, config={
@@ -89,7 +91,8 @@ model = build_model(vocab_size, config={
     "head_dim": 64,
     "dropout": 0.1,
 }).to(device)
-#model.lm_head.weight = model.token_embedding.weight   # tying
+# model.lm_head.weight = model.token_embedding.weight   # tying
+
 
 # ─── ПРАВИЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ───
 def init_gpt_weights(module):
@@ -103,15 +106,18 @@ def init_gpt_weights(module):
         nn.init.ones_(module.weight)
         nn.init.zeros_(module.bias)
 
+
 # Применяем ко всему, КРОМЕ Mamba
 for name, module in model.named_modules():
     if "mamba" in name:
         continue
     init_gpt_weights(module)
 
-# Отдельно — embedding и lm_head (они связаны через tying)
+# Отдельно — embedding и position_embedding
 nn.init.normal_(model.token_embedding.weight, mean=0.0, std=0.02)
 nn.init.normal_(model.position_embedding.weight, mean=0.0, std=0.02)
+
+
 # ─── ПРОВЕРКА ЛОГИТОВ ───
 model.eval()
 with torch.no_grad():
@@ -124,10 +130,12 @@ with torch.no_grad():
     print(f"logits std:  {logits.std().item():.3f}")
 model.train()
 
+
 # ─── Optimizer + Scaler ───
 optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
-scaler = GradScaler()                 # ← для fp16
-amp_dtype = torch.float16             # ← было bfloat16
+scaler = GradScaler()
+amp_dtype = torch.float16
+
 
 # ─── Проверка батча ───
 batch = next(iter(train_loader))
@@ -137,6 +145,8 @@ real = (batch["labels"][0] != -100).sum().item()
 total = batch["labels"][0].numel()
 print(f"Реальных токенов в примере 0: {real}/{total} ({100*real/total:.1f}%)")
 
+
+# ─── Config ───
 config = {
     "vocab_size": vocab_size,
     "d_model": 512,
@@ -147,9 +157,15 @@ config = {
     "dropout": 0.1,
 }
 
+
+# ─── Папки для чекпоинтов ───
 ckpt_dir = Path("checkpoints")
 ckpt_dir.mkdir(exist_ok=True)
 (ckpt_dir / "tokenizer").mkdir(exist_ok=True)
+
+# Папка для промежуточных чекпоинтов по шагам
+step_ckpt_dir = Path("/home/user/save")
+step_ckpt_dir.mkdir(parents=True, exist_ok=True)
 
 tokenizer.save_pretrained(ckpt_dir / "tokenizer")
 print(f"Tokenizer saved to {ckpt_dir / 'tokenizer'}")
@@ -157,8 +173,9 @@ print(f"Tokenizer saved to {ckpt_dir / 'tokenizer'}")
 
 # ─── Обучение ───
 num_epochs = 50
-save_every_n_epochs = 1                # сохранять каждые N эпох
-resume_from = "/run/media/user/Storage/ml-lub/checkpoints/epoch_002"                     # "checkpoints/last" для продолжения
+save_every_n_epochs = 1
+save_every_n_steps = 100000        # промежуточное сохранение по шагам
+resume_from = None                 # "checkpoints/last" для продолжения
 global_step = 0
 best_val_loss = float("inf")
 start_epoch = 0
@@ -169,11 +186,14 @@ if resume_from is not None:
     )
     tokenizer = AutoTokenizer.from_pretrained(ckpt_dir / "tokenizer")
 
+
 for epoch in range(start_epoch, num_epochs):
     # === TRAIN ===
     model.train()
     train_loss = 0.0
-    for batch in train_loader:
+    
+    pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} [train]", leave=False)
+    for batch in pbar:
         input_ids = batch["input_ids"].to(device, non_blocking=True)
         labels = batch["labels"].to(device, non_blocking=True)
 
@@ -195,14 +215,26 @@ for epoch in range(start_epoch, num_epochs):
 
         train_loss += loss.item()
         global_step += 1
+        
+        # Обновляем прогресс-бар каждые 10 батчей (реже = быстрее)
+        if global_step % 10 == 0:
+            pbar.set_postfix(loss=f"{loss.item():.4f}")
+        
+        # ─── Промежуточное сохранение по шагам ───
+        if global_step % save_every_n_steps == 0:
+            save_checkpoint(
+                model, optimizer, epoch + 1, global_step, config,
+                step_ckpt_dir / "last", best_val_loss
+            )
 
     train_loss /= len(train_loader)
+    pbar.close()
 
     # === VALIDATION ===
     model.eval()
     val_loss = 0.0
     with torch.no_grad():
-        for batch in val_loader:
+        for batch in tqdm(val_loader, desc=f"Epoch {epoch+1}/{num_epochs} [val]", leave=False):
             input_ids = batch["input_ids"].to(device, non_blocking=True)
             labels = batch["labels"].to(device, non_blocking=True)
 
@@ -221,14 +253,14 @@ for epoch in range(start_epoch, num_epochs):
     print(f"epoch {epoch+1:3d} | train_loss {train_loss:.4f} (ppl {math.exp(train_loss):.2f}) "
           f"| val_loss {val_loss:.4f} (ppl {math.exp(val_loss):.2f})")
 
-    # ─── СОХРАНЕНИЕ ───
+    # ─── СОХРАНЕНИЕ ПО ЭПОХАМ ───
     # 1) last — всегда (для resume)
     save_checkpoint(
         model, optimizer, epoch + 1, global_step, config,
         ckpt_dir / "last", best_val_loss
     )
 
-    # 2) Периодически
+    # 2) Периодически (для истории)
     if (epoch + 1) % save_every_n_epochs == 0:
         save_checkpoint(
             model, optimizer, epoch + 1, global_step, config,
@@ -243,6 +275,7 @@ for epoch in range(start_epoch, num_epochs):
             ckpt_dir / "best", best_val_loss
         )
         print(f"  ★ new best val_loss: {best_val_loss:.4f}")
+
 
 # ─── Финал ───
 save_checkpoint(

@@ -44,7 +44,6 @@ class GQAAttention(nn.Module):
         y = y.transpose(1, 2).contiguous().view(B, T, self.inner_dim_q)
         return self.out_proj(y)
 
-
 class TransformerBlock(nn.Module):
     def __init__(self, d_model, n_heads_q, n_heads_kv, head_dim=None, dropout=0.1):
         super().__init__()
@@ -56,6 +55,65 @@ class TransformerBlock(nn.Module):
             nn.Linear(d_model, 4 * d_model),
             nn.GELU(),
             nn.Linear(4 * d_model, d_model)
+        )
+        self.drop = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = x + self.drop(self.attn(self.ln_1(x)))
+        x = x + self.drop(self.mlp(self.ln_2(x)))
+        return x
+
+class TransformerBlockBig(nn.Module):
+    def __init__(self, d_model, n_heads_q, n_heads_kv, head_dim=None, dropout=0.1):
+        super().__init__()
+        self.ln_1 = nn.LayerNorm(d_model)
+        self.attn = GQAAttention(d_model, n_heads_q, n_heads_kv, head_dim=head_dim, dropout=dropout)
+        
+        self.ln_2 = nn.LayerNorm(d_model)
+        self.mlp = nn.Sequential(
+            nn.Linear(d_model, 6 * d_model),
+            nn.GELU(),
+            nn.Linear(6 * d_model, d_model)
+        )
+        self.drop = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = x + self.drop(self.attn(self.ln_1(x)))
+        x = x + self.drop(self.mlp(self.ln_2(x)))
+        return x
+
+class AttnMambaBlock(nn.Module):
+    def __init__(self, d_model, n_heads_q, n_heads_kv, head_dim=None, 
+                 dropout=0.1, d_state=16, d_conv=4, expand=2):
+        super().__init__()
+        self.ln_1 = nn.LayerNorm(d_model)
+        self.attn = GQAAttention(d_model, n_heads_q, n_heads_kv, 
+                                 head_dim=head_dim, dropout=dropout)
+        
+        self.ln_2 = nn.LayerNorm(d_model)
+        self.mamba = Mamba(
+            d_model=d_model,
+            d_state=d_state,
+            d_conv=d_conv,
+            expand=expand,
+        )
+        self.drop = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = x + self.drop(self.attn(self.ln_1(x)))
+        x = x + self.drop(self.mamba(self.ln_2(x)))
+        return x
+
+class FinalBlock(nn.Module):
+    def __init__(self, d_model, n_heads_q, n_heads_kv, head_dim=None, dropout=0.1):
+        super().__init__()
+        self.ln_1 = nn.LayerNorm(d_model)
+        self.attn = GQAAttention(d_model, n_heads_q, n_heads_kv, head_dim=head_dim, dropout=dropout)
+        self.ln_2 = nn.LayerNorm(d_model)
+        self.mlp = nn.Sequential(
+            nn.Linear(d_model, 2 * d_model),
+            nn.GELU(),
+            nn.Linear(2 * d_model, d_model),
         )
         self.drop = nn.Dropout(dropout)
 
@@ -92,20 +150,20 @@ class CustomHybridGPT(nn.Module):
         
         self.layer_1_mamba = MambaBlock(d_model, dropout_prob)
         
-        self.layer_2_transformer = TransformerBlock(
+        self.layer_2_transformer = TransformerBlockBig(
             d_model, n_heads_q_my, n_heads_kv_my, head_dim=head_dim, dropout=dropout_prob
         )
         
         self.layer_3_mamba = MambaBlock(d_model, dropout_prob)
         self.layer_4_mamba = MambaBlock(d_model, dropout_prob)
 
-        self.layer_5_transformer = TransformerBlock(
+        self.layer_5_AttnMambaBlock = AttnMambaBlock(
             d_model, n_heads_q_my, n_heads_kv_my, head_dim=head_dim, dropout=dropout_prob
         )
         self.layer_6_mamba = MambaBlock(d_model, dropout_prob)
         self.layer_7_mamba = MambaBlock(d_model, dropout_prob)
         
-        self.layer_8_transformer = TransformerBlock(
+        self.layer_8_FinalBlock = FinalBlock(
             d_model, n_heads_q_my, n_heads_kv_my, head_dim=head_dim, dropout=dropout_prob
         )
 
@@ -121,14 +179,14 @@ class CustomHybridGPT(nn.Module):
         x = self.token_embedding(token_ids) + self.position_embedding(pos)
         x = self.emb_dropout(x)
         
-        x = checkpoint(self.layer_1_mamba, x, use_reentrant=False)
+        x = self.layer_1_mamba(x)
         x = checkpoint(self.layer_2_transformer, x, use_reentrant=False)
-        x = checkpoint(self.layer_3_mamba, x, use_reentrant=False)
-        x = checkpoint(self.layer_4_mamba, x, use_reentrant=False)
-        x = checkpoint(self.layer_5_transformer, x, use_reentrant=False)
-        x = checkpoint(self.layer_6_mamba, x, use_reentrant=False)
+        x = self.layer_3_mamba(x)
+        x = self.layer_4_mamba(x)
+        x = checkpoint(self.layer_5_AttnMambaBlock, x, use_reentrant=False)
+        x = self.layer_6_mamba(x)
         x = checkpoint(self.layer_7_mamba, x, use_reentrant=False)
-        x = checkpoint(self.layer_8_transformer, x, use_reentrant=False)
+        x = self.layer_8_FinalBlock(x)
         
         x = self.ln_f(x)
         logits = self.lm_head(x)

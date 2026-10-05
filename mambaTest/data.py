@@ -2,32 +2,33 @@
 import json
 import torch
 from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer
 
 
 class PromptCompletionDataset(Dataset):
     """
     Датасет для задачи «продолжи текст».
     
-    Формат входа: список словарей [{"input": "...", "target": "..."}, ...]
+    Формат: [{"input": "...", "target": "..."}, ...]
     
     Логика:
-      - tokenizer(input) + tokenizer(target) → одна последовательность
-      - labels = [-100] * len(input_tokens) + target_tokens
-        (loss считается ТОЛЬКО на target)
-      - паддинг до seq_len
+      - Примеры длиннее seq_len — ВЫБРАСЫВАЮТСЯ (не режутся!)
+      - loss считается ТОЛЬКО на target (input маскируется -100)
     """
     def __init__(self, data, tokenizer, seq_len, add_eos=True):
         self.tokenizer = tokenizer
         self.seq_len = seq_len
         self.add_eos = add_eos
         self.samples = []
+        
+        n_empty = 0
+        n_too_long = 0
 
         for item in data:
             inp = item["input"].strip()
             tgt = item["target"].strip()
             if not inp or not tgt:
-                continue  # пропускаем пустые
+                n_empty += 1
+                continue
 
             inp_ids = tokenizer.encode(inp, add_special_tokens=False)
             tgt_ids = tokenizer.encode(tgt, add_special_tokens=False)
@@ -35,20 +36,24 @@ class PromptCompletionDataset(Dataset):
             if add_eos:
                 tgt_ids = tgt_ids + [tokenizer.eos_token_id]
 
-            # Вся последовательность: input + target
-            tokens = inp_ids + tgt_ids
-            # Метки: -100 на input, реальные id на target
-            labels = [-100] * len(inp_ids) + tgt_ids
-
-            # Обрезаем до seq_len + 1 (нужен сдвиг на 1)
-            tokens = tokens[: seq_len + 1]
-            labels = labels[: seq_len + 1]
-
-            # Если target обрезался полностью — пропускаем
-            if all(l == -100 for l in labels[1:]):
+            # Если длиннее seq_len — ВЫБРАСЫВАЕМ
+            if len(inp_ids) + len(tgt_ids) > seq_len:
+                n_too_long += 1
                 continue
 
+            tokens = inp_ids + tgt_ids
+            labels = [-100] * len(inp_ids) + tgt_ids
+
             self.samples.append((tokens, labels))
+
+        kept = len(self.samples)
+        total = kept + n_empty + n_too_long
+        print(f"[dataset] kept {kept}/{total} "
+              f"(empty {n_empty}, too_long {n_too_long}, "
+              f"dropped {100*(n_empty+n_too_long)/max(total,1):.1f}%)")
+        
+        if kept == 0:
+            raise ValueError(f"Датасет пустой! Все {len(data)} примеров выброшены.")
 
     def __len__(self):
         return len(self.samples)
@@ -73,20 +78,12 @@ class PromptCompletionDataset(Dataset):
 
 
 class DataModule:
-    """
-    Управляет train/val сплитом и создаёт DataLoader'ы.
-    
-    Использование:
-        dm = DataModule(data, tokenizer, seq_len=512, batch_size=4, val_ratio=0.1)
-        train_loader = dm.train_dataloader()
-        val_loader = dm.val_dataloader()
-    """
     def __init__(
         self,
         data,
         tokenizer,
-        seq_len=512,
-        batch_size=4,
+        seq_len=1024,
+        batch_size=8,
         val_ratio=0.1,
         num_workers=2,
         seed=42,
@@ -97,7 +94,6 @@ class DataModule:
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-        # Перемешиваем и делим
         rng = torch.Generator().manual_seed(seed)
         indices = torch.randperm(len(data), generator=rng).tolist()
         n_val = max(1, int(len(data) * val_ratio))
@@ -107,7 +103,9 @@ class DataModule:
         train_data = [data[i] for i in train_idx]
         val_data = [data[i] for i in val_idx]
 
+        print("Train split:")
         self.train_ds = PromptCompletionDataset(train_data, tokenizer, seq_len, add_eos)
+        print("Val split:")
         self.val_ds = PromptCompletionDataset(val_data, tokenizer, seq_len, add_eos)
 
         print(f"Train: {len(self.train_ds)} примеров | Val: {len(self.val_ds)} примеров")
@@ -134,6 +132,5 @@ class DataModule:
 
 
 def load_json_data(path):
-    """Загружает JSON-файл со списком dict."""
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
